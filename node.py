@@ -66,8 +66,11 @@ class Node:
 
     @staticmethod
     def add_edge(src, dst):
-        src.outs.append(dst)
-        dst.ins.append(src)
+        if dst not in src.outs:
+            src.outs.append(dst)
+
+        if src not in dst.ins:
+            dst.ins.append(src)
 
     @staticmethod
     def nary_function(klass, *args):   

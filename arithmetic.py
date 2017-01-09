@@ -73,6 +73,11 @@ class Constant(ArithmeticNode):
     def __str__(self):
         return str(self.value)
 
+    """ 
+    Constants are wrapped on the fly, so many such
+    objects might be generated. We cannot hash those
+    constants by value, as we are not obtaining a global graph
+    structure. Therefore, we would just lose information.
     def __hash__(self):
         return hash(self.value)            
     
@@ -81,7 +86,8 @@ class Constant(ArithmeticNode):
             return self.value == other.value      
         else:
             return False
-        
+    """
+
     def compute(self, inputs):
         return self.value, [0.]
 
@@ -113,11 +119,19 @@ if __name__ == '__main__':
     z = Symbol('z')
 
     f = (x * y + 3) / (z - 2)
-    print(f)
-    
     v,d = f.eval(x=3, y=4, z=4)
 
     print('f {}'.format(v))
     print('df/dx {}'.format(d[x]))
     print('df/dy {}'.format(d[y]))
     print('df/dz {}'.format(d[z]))
+
+    k = x*3-y
+    v,d = k.eval(x=3, y=4)
+    print(v)
+    print(d)
+
+    m = f / k
+    v,d = m.eval(x=3, y=4, z=4)
+    print(v)
+    print(d)

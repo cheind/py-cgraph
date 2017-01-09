@@ -33,13 +33,14 @@ def topological_sort(nodes):
     while q:
         n = q.pop(0)
         order.append(n)
-        for s in n.outs:
+        for s in n.outs:                        
             if s not in indegree:
                 continue # Only consider nodes within initial list of nodes
             indegree[s] -= 1
             if indegree[s] == 0:
                 q.append(s)    
 
+    assert len(order) == len(nodes)
     return order
 
 if __name__ == '__main__':
