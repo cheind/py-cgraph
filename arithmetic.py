@@ -38,32 +38,69 @@ class Add(ArithmeticNode):
     def compute(self, inputs):
         return inputs[0] + inputs[1], [1., 1.]
 
+    def __str__(self):
+        return '({} + {})'.format(self.ins[0], self.ins[1])
+
 class Sub(ArithmeticNode):
     
     def compute(self, inputs):
         return inputs[0] - inputs[1], [1., -1.]
+
+    def __str__(self):
+        return '({} - {})'.format(self.ins[0], self.ins[1])
 
 class Mul(ArithmeticNode):
 
     def compute(self, inputs):
         return inputs[0] * inputs[1], [inputs[1], inputs[0]]
 
+    def __str__(self):
+        return '({}*{})'.format(self.ins[0], self.ins[1])
+
 class Div(ArithmeticNode):
 
     def compute(self, inputs):
         return inputs[0] / inputs[1], [1. / inputs[1], -inputs[0]/inputs[1]**2]
 
+    def __str__(self):
+        return '({}/{})'.format(self.ins[0], self.ins[1])
+
 class Constant(ArithmeticNode):
     def __init__(self, value):
         super(Constant, self).__init__()
         self.value = value
+
+    def __str__(self):
+        return str(self.value)
+
+    def __hash__(self):
+        return hash(self.value)            
+    
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.value == other.value      
+        else:
+            return False
         
     def compute(self, inputs):
         return self.value, [0.]
 
 class Symbol(ArithmeticNode):
     def __init__(self, name):
-        super(Symbol, self).__init__(name=name, input_required=True)
+        super(Symbol, self).__init__(input_required=True)
+        self.name = name
+
+    def __str__(self):
+        return self.name
+
+    def __hash__(self):
+        return hash(self.name)            
+    
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.name == other.name      
+        else:
+            return False
         
     def compute(self, inputs):
         pass
@@ -76,6 +113,7 @@ if __name__ == '__main__':
     z = Symbol('z')
 
     f = (x * y + 3) / (z - 2)
+    print(f)
     
     v,d = f.eval(x=3, y=4, z=4)
 

@@ -3,33 +3,16 @@ import numpy as np
 import graph
 
 class Node:
-    def __init__(self, name=None, input_required=False):
-        self.name = name
+    def __init__(self, input_required=False):
         self.ins = []
         self.outs = []
         self.input_required = input_required
         
     def __str__(self):
-        return self.name if self.name is not None else self.__class__.__name__
-    
+        return self.name if self.name is not None else self.__class__.__name__    
+        
     def __repr__(self):
         return self.__str__()
-
-    def __hash__(self):
-        if self.name is None:
-            return super(Node, self).__hash__()
-        else:
-            return hash(self.name)
-    
-    def __eq__(self, other):
-        if self.name is None:
-            return super(Node, self).__eq__(other)
-        elif isinstance(other, str):
-            return self.name == other
-        elif hasattr(other, 'name'):
-            return self.name == other.name
-        else:
-            return False     
 
     def compute(self, inputs):
         pass
