@@ -15,14 +15,9 @@ if __name__ == '__main__':
     print('df/dy {}'.format(d[y]))
     print('df/dz {}'.format(d[z]))
 
-    """
-    k = x*3-y
-    v,d = k.eval(x=3, y=4)
+    r = cg.Symbol('r')
+    a = r * r * cg.pi
+    print(a)
+    v,d = cg.eval(a, r=3)
     print(v)
     print(d)
-
-    m = f / k
-    v,d = m.eval(x=3, y=4, z=4)
-    print(v)
-    print(d)
-    """
