@@ -1,6 +1,7 @@
 
 from numbers import Number
 from cgraph.node import Node
+from cgraph.graphs import graph
 
 def wrap_args(func):
     """Decorator to convert wrap arguments into Nodes when required."""
@@ -40,7 +41,8 @@ class Add(ArithmeticNode):
         return inputs[0] + inputs[1], [1., 1.]
 
     def __str__(self):
-        return '({} + {})'.format(self.ins[0], self.ins[1])
+        e = graph.in_edges(self)
+        return '({} + {})'.format(e[0][0], e[1][0])
 
 class Sub(ArithmeticNode):
     
@@ -48,7 +50,8 @@ class Sub(ArithmeticNode):
         return inputs[0] - inputs[1], [1., -1.]
 
     def __str__(self):
-        return '({} - {})'.format(self.ins[0], self.ins[1])
+        e = graph.in_edges(self)
+        return '({} - {})'.format(e[0][0], e[1][0])
 
 class Mul(ArithmeticNode):
 
@@ -56,7 +59,8 @@ class Mul(ArithmeticNode):
         return inputs[0] * inputs[1], [inputs[1], inputs[0]]
 
     def __str__(self):
-        return '({}*{})'.format(self.ins[0], self.ins[1])
+        e = graph.in_edges(self)
+        return '({}*{})'.format(e[0][0], e[1][0])
 
 class Div(ArithmeticNode):
 
@@ -64,4 +68,5 @@ class Div(ArithmeticNode):
         return inputs[0] / inputs[1], [1. / inputs[1], -inputs[0]/inputs[1]**2]
 
     def __str__(self):
-        return '({}/{})'.format(self.ins[0], self.ins[1])
+        e = graph.in_edges(self)
+        return '({}/{})'.format(e[0][0], e[1][0])

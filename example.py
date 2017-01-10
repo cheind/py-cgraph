@@ -7,6 +7,8 @@ if __name__ == '__main__':
     y = cg.Symbol('y')
     z = cg.Symbol('z')
 
+    
+    
     f = (x * y + 3) / (z - 2)
     v,d = cg.eval(f, x=3, y=4, z=4)
 
@@ -24,6 +26,7 @@ if __name__ == '__main__':
     df/dz -3.75
     """
 
+    
     k = x*3-cg.pi
     m = f / k
     v,d = cg.eval(m, x=3, y=4, z=4)
@@ -41,3 +44,11 @@ if __name__ == '__main__':
     dm/dy 0.2560422844135512
     dm/dz -0.64010571103387        
     """
+
+    r = cg.Symbol('r')
+    a = r * r * cg.pi
+    print(a)
+    v,d = cg.eval(a, r=3)
+    
+    print('a {}'.format(v))
+    print('da/dr {}'.format(d[r]))

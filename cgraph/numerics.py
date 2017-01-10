@@ -1,28 +1,30 @@
 from collections import defaultdict
-from cgraph import graph
+
+from cgraph.graphs import graph
 from cgraph.symbols import Symbol
 
 def eval(node, **kwargs):
-    nodes = set(graph.parents(node))        
+    nodes = graph.chain(node)     
     order = graph.topological_sort(nodes)
 
     # Forward pass
     values = {}
-    grads = defaultdict(dict)
+    grads = {}
 
     for n in order:
-        if n.in_degree == 0 and isinstance(n, Symbol):
+        if graph.indegree(n) == 0 and isinstance(n, Symbol):
             assert n.name in kwargs, 'Missing input for node {}'.format(n)
             values[n] = kwargs[n.name]
         else:
             # Gather sorted inputs
-            in_values = [values[i] for i in n.ins]                
+            in_edges = graph.in_edges(n)
+            in_values = [values[e[0]] for e in in_edges]                
             # Evaluate function and gradient w.r.t inputs
             f, d = n.compute(in_values)           
             # Bookkeeping for backward pass
             values[n] = f
-            for idx, i in enumerate(n.ins):                    
-                grads[i][n] = d[idx]
+            for idx, e in enumerate(in_edges):
+                grads[e] = d[idx]
 
     # Backward pass
     diffs = {}
@@ -31,11 +33,16 @@ def eval(node, **kwargs):
         if n == node:
             d = 1.
         else:                
-            d = sum([v for v in grads[n].values()])
+            out_edges = graph.out_edges(n)            
+            d = sum([grads[e] for e in out_edges if e[1] in nodes])
+
 
         diffs[n] = d
-            
-        for i,m in n.ins_with_multiplicity().items():
-            grads[i][n] *= (d * m)
-
+        
+        seen = set()
+        for e in graph.in_edges(n):
+            if not e in seen:
+                grads[e] *= d
+                seen.add(e)
+                
     return values[node], diffs
