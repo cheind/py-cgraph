@@ -12,6 +12,20 @@ class DirectedGraph:
     def in_edges(self, n):
         return [e for e in self.edges if e[1] == n]
 
+    def unique_out_edges(self, n):
+        seen = set()
+        for e in self.out_edges(n):
+            if not e in seen:
+                seen.add(e)
+                yield e                
+    
+    def unique_in_edges(self, n):
+        seen = set()
+        for e in self.in_edges(n):
+            if not e in seen:
+                seen.add(e)
+                yield e
+
     def multiplicity(self, e):
         return sum([1 for x in self.edges if x == e])
 
