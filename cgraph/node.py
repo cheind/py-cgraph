@@ -1,6 +1,7 @@
 
 from cgraph.graphs import graph
 
+
 class Node:       
     def __str__(self):
         return self.name if self.name is not None else self.__class__.__name__    
@@ -8,8 +9,11 @@ class Node:
     def __repr__(self):
         return self.__str__()
 
-    def compute(self, inputs):
-        pass
+    def forward(self, inputs):
+        raise NotImplementedError()
+
+    def ngradient(self, cache):
+        raise NotImplementedError()
 
     @staticmethod
     def nary_function(klass, *args):   

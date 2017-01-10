@@ -18,10 +18,11 @@ class Constant(ArithmeticNode):
         else:
             return False
     
+    def forward(self, inputs):
+        return self.value, None
 
-    def compute(self, inputs):
-        return self.value, [0.]
-
+    def ngradient(self, cache):
+        return [0.]
 
 class NamedConstant(Constant):
     def __init__(self, name, value):

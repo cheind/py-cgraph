@@ -20,19 +20,18 @@ def eval(node, **kwargs):
             in_edges = subgraph.in_edges(n)
             in_values = [values[e[0]] for e in in_edges]                
             # Evaluate function and gradient w.r.t inputs
-            f, d = n.compute(in_values)           
-            # Bookkeeping for backward pass
+            f, cache = n.forward(in_values)
+            g = n.ngradient(cache)
             values[n] = f
             for idx, e in enumerate(in_edges):
-                grads[e] += d[idx] # For duplicate edges
+                grads[e] += g[idx] # For duplicate edges
 
     # Backward pass
     diffs = {}
     for n in order[::-1]:
 
-        if n == node:
-            d = 1.
-        else:                    
+        d = 1.
+        if n != node:                   
             d = sum([grads[e] for e in subgraph.unique_out_edges(n)])
 
         diffs[n] = d

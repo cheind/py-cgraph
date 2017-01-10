@@ -36,18 +36,24 @@ class ArithmeticNode(Node):
         return Node.nary_function(Div, self, other)
 
 class Add(ArithmeticNode):
-    
-    def compute(self, inputs):
-        return inputs[0] + inputs[1], [1., 1.]
+
+    def forward(self, inputs):
+        return inputs[0] + inputs[1], None
+
+    def ngradient(self, cache):
+        return [1., 1.]
 
     def __str__(self):
         e = graph.in_edges(self)
         return '({} + {})'.format(e[0][0], e[1][0])
 
 class Sub(ArithmeticNode):
-    
-    def compute(self, inputs):
-        return inputs[0] - inputs[1], [1., -1.]
+
+    def forward(self, inputs):
+        return inputs[0] - inputs[1], None
+
+    def ngradient(self, cache):
+        return [1., -1.]
 
     def __str__(self):
         e = graph.in_edges(self)
@@ -55,8 +61,11 @@ class Sub(ArithmeticNode):
 
 class Mul(ArithmeticNode):
 
-    def compute(self, inputs):
-        return inputs[0] * inputs[1], [inputs[1], inputs[0]]
+    def forward(self, inputs):
+        return inputs[0] * inputs[1], inputs
+
+    def ngradient(self, cache):
+        return [cache[1], cache[0]]
 
     def __str__(self):
         e = graph.in_edges(self)
@@ -64,8 +73,11 @@ class Mul(ArithmeticNode):
 
 class Div(ArithmeticNode):
 
-    def compute(self, inputs):
-        return inputs[0] / inputs[1], [1. / inputs[1], -inputs[0]/inputs[1]**2]
+    def forward(self, inputs):
+        return inputs[0] * inputs[1], inputs
+
+    def ngradient(self, cache):
+        return [1. / cache[1], -cache[0]/cache[1]**2]
 
     def __str__(self):
         e = graph.in_edges(self)
