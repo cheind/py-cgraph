@@ -3,7 +3,7 @@ from collections import defaultdict
 from cgraph.graphs import graph
 from cgraph.symbols import Symbol
 
-def eval(node, **kwargs):
+def ndiff(node, **kwargs):
     subgraph = graph.chain(node)     
     order = subgraph.topological_sort()
 
@@ -39,4 +39,4 @@ def eval(node, **kwargs):
         for e in graph.unique_in_edges(n):
             grads[e] *= d
 
-    return values[node], diffs
+    return diffs

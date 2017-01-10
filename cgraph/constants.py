@@ -8,15 +8,6 @@ class Constant(ArithmeticNode):
 
     def __str__(self):
         return str(self.value)
-
-    def __hash__(self):
-        return hash(self.value)            
-    
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.value == other.value      
-        else:
-            return False
     
     def forward(self, inputs):
         return self.value, None

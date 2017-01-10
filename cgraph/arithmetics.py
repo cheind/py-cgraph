@@ -74,7 +74,7 @@ class Mul(ArithmeticNode):
 class Div(ArithmeticNode):
 
     def forward(self, inputs):
-        return inputs[0] * inputs[1], inputs
+        return inputs[0] / inputs[1], inputs
 
     def ngradient(self, cache):
         return [1. / cache[1], -cache[0]/cache[1]**2]

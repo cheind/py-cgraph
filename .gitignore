@@ -46,3 +46,4 @@ Network Trash Folder
 Temporary Items
 .apdisk
 *.pyc
+.cache/v/cache/lastfailed

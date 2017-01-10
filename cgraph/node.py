@@ -15,6 +15,14 @@ class Node:
     def ngradient(self, cache):
         raise NotImplementedError()
 
+    def eval(self, **kwargs):
+        from cgraph.eval import eval
+        return eval(self, **kwargs)
+
+    def ndiff(self, **kwargs):
+        from cgraph.ndiff import ndiff
+        return ndiff(self, **kwargs)
+
     @staticmethod
     def nary_function(klass, *args):   
         c = klass()
