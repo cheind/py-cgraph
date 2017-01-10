@@ -9,7 +9,7 @@ def eval(node, **kwargs):
 
     # Forward pass
     values = {}
-    grads = {}
+    grads = defaultdict(lambda: 0.)
 
     for n in order:
         if graph.indegree(n) == 0 and isinstance(n, Symbol):
@@ -24,7 +24,7 @@ def eval(node, **kwargs):
             # Bookkeeping for backward pass
             values[n] = f
             for idx, e in enumerate(in_edges):
-                grads[e] = d[idx]
+                grads[e] += d[idx] # For duplicate edges
 
     # Backward pass
     diffs = {}
@@ -32,17 +32,12 @@ def eval(node, **kwargs):
 
         if n == node:
             d = 1.
-        else:                
-            out_edges = subgraph.out_edges(n)            
-            d = sum([grads[e] for e in out_edges])
-
+        else:                    
+            d = sum([grads[e] for e in subgraph.unique_out_edges(n)])
 
         diffs[n] = d
         
-        seen = set()
-        for e in graph.in_edges(n):
-            if not e in seen:
-                grads[e] *= d
-                seen.add(e)
+        for e in graph.unique_in_edges(n):
+            grads[e] *= d
 
     return values[node], diffs
