@@ -35,6 +35,12 @@ class ArithmeticNode(Node):
     def __truediv__(self, other):
         return Node.nary_function(Div, self, other)
 
+    def __neg__(self):
+        return Node.nary_function(Neg, self)
+
+    def __abs__(self):
+        return Node.nary_function(Abs, self)
+
 class Add(ArithmeticNode):
 
     def forward(self, inputs):
@@ -82,3 +88,28 @@ class Div(ArithmeticNode):
     def __str__(self):
         e = graph.in_edges(self)
         return '({}/{})'.format(e[0][0], e[1][0])
+
+class Neg(ArithmeticNode):
+
+    def forward(self, inputs):
+        return -inputs[0], None
+
+    def ngradient(self, cache):
+        return [-1.]
+
+    def __str__(self):
+        e = graph.in_edges(self)
+        return '-{}'.format(e[0][0])
+
+
+class Abs(ArithmeticNode):
+
+    def forward(self, inputs):
+        return abs(inputs[0]), inputs
+
+    def ngradient(self, cache):
+        return [cache[0] / abs(cache[0])]
+
+    def __str__(self):
+        e = graph.in_edges(self)
+        return 'abs({})'.format(e[0][0])
