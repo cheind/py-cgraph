@@ -1,4 +1,4 @@
-
+from collections import defaultdict
 
 class Node:
     def __init__(self, input_required=False):
@@ -19,17 +19,20 @@ class Node:
     def in_degree(self):
         return len(self.ins)
 
+    def ins_with_multiplicity(self):
+        d = defaultdict(lambda: 0)
+        for n in self.ins:
+            d[n] += 1
+        return d
+
     @property
     def out_degree(self):
         return len(self.outs)
 
     @staticmethod
     def add_edge(src, dst):
-        if dst not in src.outs:
-            src.outs.append(dst)
-
-        if src not in dst.ins:
-            dst.ins.append(src)
+        src.outs.append(dst)
+        dst.ins.append(src)
 
     @staticmethod
     def nary_function(klass, *args):   

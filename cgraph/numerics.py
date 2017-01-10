@@ -34,7 +34,7 @@ def eval(node, **kwargs):
 
         diffs[n] = d
             
-        for i in n.ins:
-            grads[i][n] *= d
+        for i,m in n.ins_with_multiplicity().items():
+            grads[i][n] *= (d * m)
 
     return values[node], diffs
