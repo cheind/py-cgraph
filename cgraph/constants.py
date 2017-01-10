@@ -1,4 +1,5 @@
 from cgraph.arithmetics import ArithmeticNode
+import math
 
 class Constant(ArithmeticNode):
     def __init__(self, value):
@@ -12,7 +13,7 @@ class Constant(ArithmeticNode):
     Constants are wrapped on the fly, so many such
     objects might be generated. We cannot hash those
     constants by value, as we are not obtaining a global graph
-    structure. Therefore, we would just lose information.
+    structure. Otherwise we would lose information.
     def __hash__(self):
         return hash(self.value)            
     
@@ -25,3 +26,15 @@ class Constant(ArithmeticNode):
 
     def compute(self, inputs):
         return self.value, [0.]
+
+
+class NamedConstant(Constant):
+    def __init__(self, name, value):
+        super(NamedConstant, self).__init__(value)
+        self.name = name
+
+    def __str__(self):
+        return str(self.name)
+
+
+pi = NamedConstant('pi', math.pi)
