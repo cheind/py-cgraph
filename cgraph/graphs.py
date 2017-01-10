@@ -4,6 +4,7 @@ class DirectedGraph:
 
     def __init__(self):
         self.edges = []
+        self.nodes = set()
 
     def out_edges(self, n):
         return [e for e in self.edges if e[0] == n]
@@ -22,26 +23,36 @@ class DirectedGraph:
 
     def add_edge(self, src, dst):
         self.edges.append((src, dst))
+        self.nodes.add(src)
+        self.nodes.add(dst)
+    
+    def add_edges(self, edges):
+        for e in edges:
+            self.add_edge(e[0], e[1])
+    
+    def add_node(self, src):
+        self.nodes.add(src)
 
-    def chain(self, head):       
-        nodes = set()
-        nodes.add(head)
-        q = [head]
+    def chain(self, head):  
+        g = DirectedGraph()
+        g.add_node(head)
+        
+        seen = set()
+        q = [head]        
         while q:
             n = q.pop(0)
-            parents = [src for src,dst in self.in_edges(n)]
-            nodes.update(parents)
-            q.extend(parents)
+            if not n in seen:
+                in_edges = self.in_edges(n)            
+                g.add_edges(in_edges)
+                q.extend([e[0] for e in in_edges])
+                seen.add(n)
 
-        return nodes
+        return g
 
-    def topological_sort(self, nodes):
-        if not isinstance(nodes, Iterable):
-            nodes = [nodes]
-
+    def topological_sort(self):
         q = []
         indegree = {}
-        for n in nodes:
+        for n in self.nodes:
             indegree[n] = self.indegree(n)
             if indegree[n] == 0:
                 q.append(n)
@@ -52,8 +63,6 @@ class DirectedGraph:
             order.append(n)
             for e in self.out_edges(n):
                 d = e[1]                        
-                if d not in indegree:
-                    continue # Only consider nodes within initial list of nodes
                 indegree[d] -= 1
                 if indegree[d] == 0:
                     q.append(d)

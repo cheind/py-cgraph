@@ -4,8 +4,8 @@ from cgraph.graphs import graph
 from cgraph.symbols import Symbol
 
 def eval(node, **kwargs):
-    nodes = graph.chain(node)     
-    order = graph.topological_sort(nodes)
+    subgraph = graph.chain(node)     
+    order = subgraph.topological_sort()
 
     # Forward pass
     values = {}
@@ -17,7 +17,7 @@ def eval(node, **kwargs):
             values[n] = kwargs[n.name]
         else:
             # Gather sorted inputs
-            in_edges = graph.in_edges(n)
+            in_edges = subgraph.in_edges(n)
             in_values = [values[e[0]] for e in in_edges]                
             # Evaluate function and gradient w.r.t inputs
             f, d = n.compute(in_values)           
@@ -33,8 +33,8 @@ def eval(node, **kwargs):
         if n == node:
             d = 1.
         else:                
-            out_edges = graph.out_edges(n)            
-            d = sum([grads[e] for e in out_edges if e[1] in nodes])
+            out_edges = subgraph.out_edges(n)            
+            d = sum([grads[e] for e in out_edges])
 
 
         diffs[n] = d
@@ -44,5 +44,5 @@ def eval(node, **kwargs):
             if not e in seen:
                 grads[e] *= d
                 seen.add(e)
-                
+
     return values[node], diffs
