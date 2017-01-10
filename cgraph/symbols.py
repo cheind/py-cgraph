@@ -2,7 +2,7 @@ from cgraph.arithmetics import ArithmeticNode
 
 class Symbol(ArithmeticNode):
     def __init__(self, name):
-        super(Symbol, self).__init__(input_required=True)
+        super(Symbol, self).__init__()
         self.name = name
 
     def __str__(self):

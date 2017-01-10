@@ -1,10 +1,9 @@
 from collections import defaultdict
 
 class Node:
-    def __init__(self, input_required=False):
+    def __init__(self):
         self.ins = []
         self.outs = []
-        self.input_required = input_required
         
     def __str__(self):
         return self.name if self.name is not None else self.__class__.__name__    

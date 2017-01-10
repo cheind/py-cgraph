@@ -1,5 +1,6 @@
 from collections import defaultdict
 from cgraph import graph
+from cgraph.symbols import Symbol
 
 def eval(node, **kwargs):
     nodes = set(graph.parents(node))        
@@ -10,7 +11,7 @@ def eval(node, **kwargs):
     grads = defaultdict(dict)
 
     for n in order:
-        if n.in_degree == 0 and n.input_required:
+        if n.in_degree == 0 and isinstance(n, Symbol):
             assert n.name in kwargs, 'Missing input for node {}'.format(n)
             values[n] = kwargs[n.name]
         else:
