@@ -47,7 +47,10 @@ class Add(ArithmeticNode):
         return inputs[0] + inputs[1], None
 
     def ngradient(self, cache):
-        return [1., 1.]
+        return [1, 1]
+
+    def sgradient(self, inputs):
+        return [1, 1]
 
     def __str__(self):
         e = graph.in_edges(self)
@@ -59,7 +62,10 @@ class Sub(ArithmeticNode):
         return inputs[0] - inputs[1], None
 
     def ngradient(self, cache):
-        return [1., -1.]
+        return [1, -1]
+
+    def sgradient(self, inputs):
+        return [1, -1]
 
     def __str__(self):
         e = graph.in_edges(self)
@@ -72,6 +78,9 @@ class Mul(ArithmeticNode):
 
     def ngradient(self, cache):
         return [cache[1], cache[0]]
+
+    def sgradient(self, inputs):
+        return [inputs[1], inputs[0]]
 
     def __str__(self):
         e = graph.in_edges(self)
@@ -95,7 +104,10 @@ class Neg(ArithmeticNode):
         return -inputs[0], None
 
     def ngradient(self, cache):
-        return [-1.]
+        return [-1]
+
+    def sgradient(self, inputs):
+        return [-1]
 
     def __str__(self):
         e = graph.in_edges(self)

@@ -16,6 +16,3 @@ class Symbol(ArithmeticNode):
             return self.name == other.name      
         else:
             return False
-        
-    def compute(self, inputs):
-        pass

@@ -15,6 +15,9 @@ class Node:
     def ngradient(self, cache):
         raise NotImplementedError()
 
+    def sgradient(self, inputs):
+        raise NotImplementedError()
+
     def eval(self, **kwargs):
         from cgraph.eval import eval
         return eval(self, **kwargs)
@@ -22,6 +25,10 @@ class Node:
     def ndiff(self, **kwargs):
         from cgraph.ndiff import ndiff
         return ndiff(self, **kwargs)
+
+    def sdiff(self):
+        from cgraph.sdiff import sdiff
+        return sdiff(self)
 
     @staticmethod
     def nary_function(klass, *args):   

@@ -13,7 +13,10 @@ class Constant(ArithmeticNode):
         return self.value, None
 
     def ngradient(self, cache):
-        return [0.]
+        pass
+
+    def sgradient(self, inputs):
+        pass
 
 class NamedConstant(Constant):
     def __init__(self, name, value):
