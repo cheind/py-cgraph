@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from cgraph.graphs import graph
 from cgraph.symbols import Symbol
-from cgraph.context import Context
+from cgraph.eval import Context
 from cgraph.helpers import arraylike
 
 def ndiff(node, **kwargs):

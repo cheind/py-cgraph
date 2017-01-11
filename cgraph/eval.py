@@ -1,6 +1,12 @@
 from cgraph.graphs import graph
 from cgraph.symbols import Symbol
-from cgraph.context import Context
+
+class Context(object):
+    def __init__(self):
+        self.value = None
+        self.ngradient = None
+        self.sgradient = None
+        self.cache = None
 
 
 def eval(node, **kwargs):

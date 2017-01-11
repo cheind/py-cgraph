@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from cgraph.graphs import graph
 from cgraph.constants import Constant
-from cgraph.context import Context
+from cgraph.eval import Context
 from cgraph.helpers import arraylike
 
 def multiplicity(edges):
