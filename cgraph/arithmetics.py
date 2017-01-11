@@ -1,29 +1,29 @@
 
-from cgraph.node import Node
-from cgraph.helpers import nary_function
+import cgraph.node as node
+import cgraph.helpers as helpers
 
-class ArithmeticNode(Node):
+class ArithmeticNode(node.Node):
 
     def __add__(self, other):
-        from cgraph.ops import Add
-        return nary_function(Add, self, other)
+        import cgraph.ops.addition as add
+        return helpers.nary_function(add.Add, self, other)
 
     def __sub__(self, other):
-        from cgraph.ops import Sub
-        return nary_function(Sub, self, other)
+        import cgraph.ops.subtraction as sub
+        return helpers.nary_function(sub.Sub, self, other)
     
     def __mul__(self, other):
-        from cgraph.ops import Mul
-        return nary_function(Mul, self, other)
+        import cgraph.ops.multiplication as mul
+        return helpers.nary_function(mul.Mul, self, other)
     
     def __truediv__(self, other):
-        from cgraph.ops import Div
-        return nary_function(Div, self, other)
+        import cgraph.ops.division as div
+        return helpers.nary_function(div.Div, self, other)
 
     def __neg__(self):
-        from cgraph.ops import Neg
-        return nary_function(Neg, self)
+        import cgraph.ops.negation as neg
+        return helpers.nary_function(neg.Neg, self)
 
     def __abs__(self):
-        from cgraph.ops import Abs
-        return nary_function(Abs, self)
+        import cgraph.ops.absolute as abso
+        return helpers.nary_function(abso.Abs, self)

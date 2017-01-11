@@ -1,6 +1,6 @@
 from pytest import approx
 
-import cgraph as cg
+import cgraph.symbols as cg
 
 def test_single_symbol():
     x = cg.Symbol('x')

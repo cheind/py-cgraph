@@ -1,7 +1,7 @@
-from cgraph.arithmetics import ArithmeticNode
+import cgraph.arithmetics
 import math
 
-class Constant(ArithmeticNode):
+class Constant(cgraph.arithmetics.ArithmeticNode):
     def __init__(self, value):
         super(Constant, self).__init__()
         self._value = value

@@ -1,6 +1,6 @@
-from cgraph.arithmetics import ArithmeticNode
+import cgraph.arithmetics as ar
 
-class Symbol(ArithmeticNode):
+class Symbol(ar.ArithmeticNode):
     def __init__(self, name):
         super(Symbol, self).__init__()
         self.name = name
