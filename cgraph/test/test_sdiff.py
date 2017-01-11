@@ -1,5 +1,5 @@
 from pytest import approx
-import math
+
 import cgraph as cg
 
 def test_add():
@@ -8,12 +8,12 @@ def test_add():
     y = cg.Symbol('y')
 
     f = (x + y)*x
-    d = f.sdiff()
-    
-    
-    print(d[x])
-    print(d[y])
+    d = f.sdiff() # symbolic diff with respect to all inputs
 
-    #print(d[x].eval(x=2, y=3))
+    print(d[x]) # gives ((1*(x + y)) + ((1*x)*1)), which simplifies to 2x + y
+    assert d[x].eval(x=2, y=3) == approx(7)
+
+    print(d[y]) # gives ((1*x)*1), which simplifies to x
+    assert d[y].eval(x=2, y=3) == approx(2)
     
     
