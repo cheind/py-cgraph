@@ -29,10 +29,3 @@ class Node:
     def sdiff(self):
         from cgraph.sdiff import sdiff
         return sdiff(self)
-
-    @staticmethod
-    def nary_function(klass, *args):   
-        c = klass()
-        for n in args:
-            graph.add_edge(n, c)
-        return c
