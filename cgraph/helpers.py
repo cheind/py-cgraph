@@ -17,3 +17,9 @@ def nary_function(klass, *args, **kwargs):
     for n in wrap_args(*args):
         graph.add_edge(n, c)
     return c
+
+def arraylike(x):
+    if hasattr(x, "__getitem__"):
+        return x
+    else:
+        return [x]

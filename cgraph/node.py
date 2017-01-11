@@ -9,13 +9,13 @@ class Node:
     def __repr__(self):
         return self.__str__()
 
-    def forward(self, inputs):
+    def value(self, ctx):
         raise NotImplementedError()
 
-    def ngradient(self, cache):
+    def ngradient(self, ctx):
         raise NotImplementedError()
 
-    def sgradient(self, inputs):
+    def sgradient(self, ctx):
         raise NotImplementedError()
 
     def eval(self, **kwargs):

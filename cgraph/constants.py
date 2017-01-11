@@ -4,18 +4,18 @@ import math
 class Constant(ArithmeticNode):
     def __init__(self, value):
         super(Constant, self).__init__()
-        self.value = value
+        self._value = value
 
     def __str__(self):
-        return str(self.value)
+        return str(self._value)
     
-    def forward(self, inputs):
-        return self.value, None
+    def value(self, ctx):
+        ctx.value = self._value
 
-    def ngradient(self, cache):
+    def ngradient(self, ctx):
         pass
 
-    def sgradient(self, inputs):
+    def sgradient(self, ctx):
         pass
 
 class NamedConstant(Constant):

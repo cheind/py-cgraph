@@ -1,5 +1,6 @@
 from cgraph.graphs import graph
 from cgraph.symbols import Symbol
+from cgraph.context import Context
 
 
 def eval(node, **kwargs):
@@ -13,10 +14,9 @@ def eval(node, **kwargs):
             assert n.name in kwargs, 'Missing input for node {}'.format(n)
             values[n] = kwargs[n.name]
         else:
-            in_edges = subgraph.in_edges(n)
-            in_values = [values[e[0]] for e in in_edges]                
-            f, _ = n.forward(in_values)
-            values[n] = f
+            ctx = Context()
+            ctx.in_values = [values[e[0]] for e in subgraph.in_edges(n)]
+            n.value(ctx)
+            values[n] = ctx.value
             
-    
     return values[node]

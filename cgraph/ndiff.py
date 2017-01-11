@@ -2,6 +2,8 @@ from collections import defaultdict
 
 from cgraph.graphs import graph
 from cgraph.symbols import Symbol
+from cgraph.context import Context
+from cgraph.helpers import arraylike
 
 def ndiff(node, **kwargs):
     subgraph = graph.chain(node)     
@@ -16,14 +18,17 @@ def ndiff(node, **kwargs):
             assert n.name in kwargs, 'Missing input for node {}'.format(n)
             values[n] = kwargs[n.name]
         else:
-            # Gather sorted inputs
-            in_edges = subgraph.in_edges(n)
-            in_values = [values[e[0]] for e in in_edges]                
-            # Evaluate function and gradient w.r.t inputs
-            f, cache = n.forward(in_values)
-            g = n.ngradient(cache)
-            values[n] = f
-            for idx, e in enumerate(in_edges):
+            ctx = Context()
+            ctx.in_edges = subgraph.in_edges(n)
+            ctx.in_values = [values[e[0]] for e in ctx.in_edges]                
+            
+            n.value(ctx)
+            n.ngradient(ctx)
+            
+            values[n] = ctx.value
+            g = arraylike(ctx.ngradient)
+
+            for idx, e in enumerate(ctx.in_edges):
                 grads[e] += g[idx] # For duplicate edges
 
     # Backward pass
