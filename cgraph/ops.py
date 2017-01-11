@@ -11,7 +11,7 @@ class Add(ArithmeticNode):
         return [1, 1]
 
     def sgradient(self, inputs):
-        return [1, 1]
+        return [Constant(1), Constant(1)]
 
     def __str__(self):
         e = graph.in_edges(self)
@@ -26,7 +26,7 @@ class Sub(ArithmeticNode):
         return [1, -1]
 
     def sgradient(self, inputs):
-        return [1, -1]
+        return [Constant(1), Constant(-1)]
 
     def __str__(self):
         e = graph.in_edges(self)
@@ -68,7 +68,7 @@ class Neg(ArithmeticNode):
         return [-1]
 
     def sgradient(self, inputs):
-        return [-1]
+        return [Constant(-1)]
 
     def __str__(self):
         e = graph.in_edges(self)
