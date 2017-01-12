@@ -27,3 +27,7 @@ class ArithmeticNode(node.Node):
     def __abs__(self):
         import cgraph.ops.absolute as abso
         return helpers.nary_link(abso.Abs(), self)
+
+    def __pow__(self, other):
+        import cgraph.ops.exponential as expo
+        return helpers.nary_link(expo.Pow(), self, other)
