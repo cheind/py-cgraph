@@ -1,5 +1,4 @@
 import math
-from numbers import Number
 
 from ..node import Node
 from ..arithmetics import ArithmeticNode
@@ -23,10 +22,8 @@ class Signum(ArithmeticNode):
         return 'sgn({})'.format(e[0][0])
 
 def sgn(x):
-    if isinstance(x, Number):
-        return math.copysign(1, x)
-    elif isinstance(x, Node):
-        return nary_link(Signum(), x)
-    else:
-        raise TypeError('Unsupported type {}'.format(type(x)))
+    return math.copysign(1, x)
+
+def sym_sgn(x):
+    return nary_link(Signum(), x)
 

@@ -1,6 +1,7 @@
 from ..arithmetics import ArithmeticNode
 from ..constants import Constant
 from ..graphs import graph
+from ..helpers import nary_link
 
 class Mul(ArithmeticNode):
 
@@ -16,3 +17,7 @@ class Mul(ArithmeticNode):
     def __str__(self):
         e = graph.in_edges(self)
         return '({}*{})'.format(e[0][0], e[1][0])
+
+
+def sym_mul(x, y):
+    return nary_link(Mul(), x, y)

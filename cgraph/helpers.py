@@ -3,14 +3,12 @@ from numbers import Number
 from cgraph.graphs import graph
 
 def wrap_args(*args):
-    newargs = []
     for n in args:               
         if isinstance(n, Number):
             from cgraph.constants import Constant
-            newargs.append(Constant(n))
+            yield Constant(n)
         else:
-            newargs.append(n)
-    return newargs
+            yield n
 
 def nary_link(dst_node, *args):   
     for n in wrap_args(*args):

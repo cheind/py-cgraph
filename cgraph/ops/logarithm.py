@@ -22,10 +22,5 @@ class Logartihm(ArithmeticNode):
         e = graph.in_edges(self)
         return 'log({})'.format(e[0][0])
 
-def log(x):
-    if isinstance(x, Number):
-        return math.log(x)
-    elif isinstance(x, Node):
-        return nary_link(Logartihm(), x)
-    else:
-        raise TypeError('Unsupported type {}'.format(type(x)))
+def sym_log(x):
+    return nary_link(Logartihm(), x)

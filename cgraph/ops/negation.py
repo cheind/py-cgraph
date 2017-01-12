@@ -1,6 +1,7 @@
 from ..arithmetics import ArithmeticNode
 from ..constants import Constant
 from ..graphs import graph
+from ..helpers import nary_link
 
 class Neg(ArithmeticNode):
 
@@ -16,3 +17,6 @@ class Neg(ArithmeticNode):
     def __str__(self):
         e = graph.in_edges(self)
         return '-{}'.format(e[0][0])
+
+def sym_neg(x):
+    return nary_link(Neg(), x)

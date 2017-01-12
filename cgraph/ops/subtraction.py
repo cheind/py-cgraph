@@ -2,6 +2,7 @@
 from ..arithmetics import ArithmeticNode
 from ..constants import Constant
 from ..graphs import graph
+from ..helpers import nary_link
 
 class Sub(ArithmeticNode):
 
@@ -17,3 +18,6 @@ class Sub(ArithmeticNode):
     def __str__(self):
         e = graph.in_edges(self)
         return '({} - {})'.format(e[0][0], e[1][0])
+
+def sym_sub(x, y):
+    return nary_link(Sub(), x, y)

@@ -1,6 +1,7 @@
 from ..arithmetics import ArithmeticNode
 from ..constants import Constant
 from ..graphs import graph
+from ..helpers import nary_link
 
 class Div(ArithmeticNode):
 
@@ -16,3 +17,6 @@ class Div(ArithmeticNode):
     def __str__(self):
         e = graph.in_edges(self)
         return '({}/{})'.format(e[0][0], e[1][0])
+
+def sym_div(x, y):
+    return nary_link(Div(), x, y)
