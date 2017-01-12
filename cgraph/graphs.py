@@ -85,22 +85,17 @@ class DirectedGraph:
 
 graph = DirectedGraph()
 
-if __name__ == '__main__':
 
-    from node import Node
+class GraphTraversal:
 
-    x = Node('x')
-    y = Node('y')
-    z = Node('z')
-    a = Node('a')
-    w = Node('w')
+    def __init__(self, node):
+        self.graph = graph.chain(node)     
+        self.order = self.graph.topological_sort()
 
-    Node.add_edge(x, z)
-    Node.add_edge(y, z)
-    Node.add_edge(z, a)
-    Node.add_edge(x, w)
+    def forward_order(self):
+        for n in self.order:
+            yield n
 
-    nodes = parents(a) # all but w    
-    assert set(nodes) == set([x,y,z,a]), 'All but w'
-    order = topological_sort(nodes)
-    assert order == [x,y,z,a] or order == [y,x,z,a], 'Failed to sort topologically'
+    def backward_order(self):
+        for n in self.order[::-1]:
+            yield n
