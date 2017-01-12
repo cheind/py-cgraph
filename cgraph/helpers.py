@@ -12,11 +12,10 @@ def wrap_args(*args):
             newargs.append(n)
     return newargs
 
-def nary_function(klass, *args, **kwargs):   
-    c = klass(**kwargs)
+def nary_link(dst_node, *args):   
     for n in wrap_args(*args):
-        graph.add_edge(n, c)
-    return c
+        graph.add_edge(n, dst_node)
+    return dst_node
 
 def arraylike(x):
     if hasattr(x, "__getitem__"):
