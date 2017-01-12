@@ -21,3 +21,11 @@ class Add(ArithmeticNode):
 
 def sym_add(x, y):
     return nary_link(Add(), x, y)
+
+def sym_sum(elements):
+    assert len(elements) > 0    
+    
+    n = elements[0]
+    for idx in range(1, len(elements)):
+        n = n + elements[idx]
+    return n

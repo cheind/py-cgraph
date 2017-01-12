@@ -8,15 +8,17 @@ from ..helpers import nary_link
 
 from .logarithm import sym_log
 
+import cgraph.guards as guards
+
 class Pow(ArithmeticNode):
 
     def value(self, ctx):
         ctx.value = ctx.in_values[0]**ctx.in_values[1]        
 
-    def ngradient(self, ctx):
+    def ngradient(self, ctx):        
         ctx.ngradient = [
             ctx.in_values[1] * ctx.in_values[0]**(ctx.in_values[1]-1),
-            ctx.value * math.log(ctx.in_values[0])
+            ctx.value * math.log(guards.zn(ctx.in_values[0]))
         ]
 
     def sgradient(self, ctx):
