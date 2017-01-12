@@ -43,6 +43,10 @@ class DirectedGraph:
     def add_edges(self, edges):
         for e in edges:
             self.add_edge(e[0], e[1])
+
+    def remove_edges(self, edges):
+        which = set(edges)
+        self.edges = [e for e in self.edges if e not in which]
     
     def add_node(self, src):
         self.nodes.add(src)
