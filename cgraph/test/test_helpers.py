@@ -4,18 +4,14 @@ from pytest import approx
 
 def checkf(f, fargs, value=None, ngrad=None):
     __tracebackhide__ = True
-
-    kargs = {}
-    for k,v in fargs.items():
-        kargs[k.name] = v
-    
-    v = f.eval(**kargs)
-    if value != approx(f.eval(**kargs)):
+   
+    v = f.eval(fargs)
+    if value != approx(v):
         pytest.fail("""Function VALUE check failed
         f: {}
         expected value of {} - received {}""".format(f, value, v))
 
-    ng = f.ndiff(**kargs)
+    ng = f.ndiff(fargs)
     sg = f.sdiff()
 
     for k in fargs.keys():
@@ -25,8 +21,8 @@ def checkf(f, fargs, value=None, ngrad=None):
             df/d{}
             expected value of {} - received {}""".format(f, k, ngrad[k], ng[k]))
 
-        if ngrad[k] != approx(sg[k].eval(**kargs)):
+        if ngrad[k] != approx(sg[k].eval(fargs)):
             pytest.fail("""Function SYMBOLIC GRAD check failed
             f: {}, 
             df/d{}: {},
-            expected value of {} - received {}""".format(f, k, sg[k], ngrad[k], sg[k].eval(**kargs)))
+            expected value of {} - received {}""".format(f, k, sg[k], ngrad[k], sg[k].eval(fargs)))

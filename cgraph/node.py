@@ -18,13 +18,13 @@ class Node:
     def sgradient(self, ctx):
         raise NotImplementedError()
 
-    def eval(self, **kwargs):
+    def eval(self, fargs):
         from cgraph.eval import eval
-        return eval(self, **kwargs)
+        return eval(self, fargs)
 
-    def ndiff(self, **kwargs):
+    def ndiff(self, fargs):
         from cgraph.ndiff import ndiff
-        return ndiff(self, **kwargs)
+        return ndiff(self, fargs)
 
     def sdiff(self):
         from cgraph.sdiff import sdiff

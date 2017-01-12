@@ -5,7 +5,7 @@ from cgraph.symbols import Symbol
 from cgraph.eval import Context
 from cgraph.helpers import arraylike
 
-def ndiff(node, **kwargs):
+def ndiff(node, fargs):
     subgraph = graph.chain(node)     
     order = subgraph.topological_sort()
 
@@ -14,9 +14,9 @@ def ndiff(node, **kwargs):
     grads = defaultdict(lambda: 0.)
 
     for n in order:
-        if graph.indegree(n) == 0 and isinstance(n, Symbol):
-            assert n.name in kwargs, 'Missing input for node {}'.format(n)
-            values[n] = kwargs[n.name]
+        if subgraph.indegree(n) == 0 and isinstance(n, Symbol):
+            assert n in fargs, 'Missing input for node {}'.format(n)
+            values[n] = fargs[n]
         else:
             ctx = Context()
             ctx.in_edges = subgraph.in_edges(n)

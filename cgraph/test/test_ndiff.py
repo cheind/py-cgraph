@@ -2,15 +2,13 @@ from pytest import approx
 import math
 
 import cgraph as cg
-
-
 def test_add():
 
     x = cg.Symbol('x')
     y = cg.Symbol('y')
 
     f = x + y
-    d = f.ndiff(x=3, y=4)
+    d = f.ndiff({x:3, y:4})
     assert d[x] == approx(1.)
     assert d[y] == approx(1.)
 
@@ -20,7 +18,7 @@ def test_sub():
     y = cg.Symbol('y')
 
     f = x - y
-    d = f.ndiff(x=3, y=4)
+    d = f.ndiff({x:3, y:4})
     assert d[x] == approx(1.)
     assert d[y] == approx(-1.)
 
@@ -30,7 +28,7 @@ def test_mul():
     y = cg.Symbol('y')
 
     f = x * y
-    d = f.ndiff(x=3, y=4)
+    d = f.ndiff({x:3, y:4})
     assert d[x] == approx(4)
     assert d[y] == approx(3)
 
@@ -41,7 +39,7 @@ def test_div():
     y = cg.Symbol('y')
 
     f = x / y
-    d = f.ndiff(x=2, y=4)
+    d = f.ndiff({x:2, y:4})
     assert d[x] == approx(1/4)
     assert d[y] == approx(-2/4**2)
 
@@ -51,7 +49,7 @@ def test_neg():
     x = cg.Symbol('x')
 
     f = -x
-    d = f.ndiff(x=2)
+    d = f.ndiff({x:2})
     assert d[x] == approx(-1)
 
 def test_abs():
@@ -59,7 +57,7 @@ def test_abs():
     x = cg.Symbol('x')
 
     f = abs(x)
-    d = f.ndiff(x=-2)
+    d = f.ndiff({x:-2})
     assert d[x] == approx(-2/abs(2))
 
 def test_fun():
@@ -69,7 +67,7 @@ def test_fun():
     z = cg.Symbol('z')
 
     f = (x * y + 3) / (z - 2)
-    d = f.ndiff(x=3, y=4, z=4)
+    d = f.ndiff({x:3, y:4, z:4})
 
     assert d[x] == approx(2.)
     assert d[y] == approx(1.5)
@@ -78,13 +76,13 @@ def test_fun():
     k = x * 3 - cg.pi
     m = f / k
 
-    d = m.ndiff(x=3, y=4, z=4)
+    d = m.ndiff({x:3, y:4, z:4})
     assert d[x] == approx(-0.3141868015256969)
     assert d[y] == approx(0.2560422844135512)
     assert d[z] == approx(-0.64010571103387)
 
     l = (-x + abs(f)) * m
-    d = l.ndiff(x=3, y=4, z=4)
+    d = l.ndiff({x:3, y:4, z:4})
     assert d[x] == approx(-0.133629184797880)
     assert d[y] == approx(3.07250741296261)
     assert d[z] == approx(-7.68126853240654)
@@ -95,5 +93,5 @@ def test_circle_area():
     r = cg.Symbol('r')
     A = r * r * cg.pi
 
-    d = A.ndiff(r=3)
+    d = A.ndiff({r:3})
     assert d[r] == approx(6*math.pi)

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 def generate_points(n, w0, w1):
 
-    x = np.random.uniform(0, 10, size=n)
+    x = np.linspace(0, 10, n)
     y = x * w0 + w1 + np.random.normal(scale=0.1, size=n)
     return np.vstack((x,y))
 
@@ -30,7 +30,7 @@ def least_squares(xy):
 
 if __name__ == '__main__':
 
-    # Paramters of ideal line
+    # Parameters of ideal line
     k = 0.8
     d = 2.0
 
@@ -45,21 +45,22 @@ if __name__ == '__main__':
     step = 0.001
 
     for i in range(400):      
-        df = f.ndiff(w0=guess[w0], w1=guess[w1])
+        df = f.ndiff(guess)
 
         guess[w0] -= step * df[w0]
         guess[w1] -= step * df[w1]
 
-        print('Error {}'.format(f.eval(w0=guess[w0], w1=guess[w1])))
+        print('Error {}'.format(f.eval(guess)))
 
     
     fit = least_squares(samples)
-    plt.plot([0, 10], [0*fit[0]+fit[1], 10*fit[0]+fit[1]], color='r', linestyle='-', linewidth=1)
+    plt.plot([0, 10], [0*fit[0]+fit[1], 10*fit[0]+fit[1]], color='r', linestyle='-', linewidth=1, label='least squares')
     
     plt.scatter(samples[0,:], samples[1,:])
-    plt.plot([0, 10], [0*k+d, 10*k+d], color='k', linestyle=':', linewidth=1)
+    plt.plot([0, 10], [0*k+d, 10*k+d], color='k', linestyle=':', linewidth=1, label='ground truth')
     
-    plt.plot([0, 10], [0*guess[w0]+guess[w1], 10*guess[w0]+guess[w1]], color='g', linestyle='-', linewidth=1)
+    plt.plot([0, 10], [0*guess[w0]+guess[w1], 10*guess[w0]+guess[w1]], color='g', linestyle='-', linewidth=1, label='optimized')
+    plt.legend()
     plt.show()
 
 

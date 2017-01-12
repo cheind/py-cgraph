@@ -11,9 +11,9 @@ if __name__ == '__main__':
     
     f = (x * y + 3) / (z - 2)
     print(f)
-    print('f {}'.format(f.eval(x=3, y=4, z=4)))
+    print('f {}'.format(f.eval({x:3, y:4, z:4})))
     
-    d = f.ndiff(x=3, y=4, z=4)
+    d = f.ndiff({x:3, y:4, z:4})
     print('df/dx {}'.format(d[x]))
     print('df/dy {}'.format(d[y]))
     print('df/dz {}'.format(d[z]))

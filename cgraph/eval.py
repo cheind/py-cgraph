@@ -9,16 +9,16 @@ class Context(object):
         self.cache = None
 
 
-def eval(node, **kwargs):
+def eval(node, fargs):
     subgraph = graph.chain(node)     
     order = subgraph.topological_sort()
 
     values = {}
 
     for n in order:
-        if graph.indegree(n) == 0 and isinstance(n, Symbol):
-            assert n.name in kwargs, 'Missing input for node {}'.format(n)
-            values[n] = kwargs[n.name]
+        if subgraph.indegree(n) == 0 and isinstance(n, Symbol):
+            assert n in fargs, 'Missing input for node {}'.format(n)
+            values[n] = fargs[n]
         else:
             ctx = Context()
             ctx.in_values = [values[e[0]] for e in subgraph.in_edges(n)]
