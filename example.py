@@ -1,5 +1,5 @@
 import cgraph as cg
-
+import cgraph.simplify
 
 if __name__ == '__main__':
 
@@ -10,18 +10,7 @@ if __name__ == '__main__':
     
     
     f = (x * y + 3) / (z - 2)
-    print(f)
-    print('f {}'.format(f.eval({x:3, y:4, z:4})))
-    
-    d = f.ndiff({x:3, y:4, z:4})
-    print('df/dx {}'.format(d[x]))
-    print('df/dy {}'.format(d[y]))
-    print('df/dz {}'.format(d[z]))
-    
-    """
-    (((x*y) + 3)/(z - 2))
-    f 7.5
-    df/dx 2.0
-    df/dy 1.5
-    df/dz -3.75
-    """
+    d = f.sdiff()
+
+    print(d[x])
+    print(cgraph.simplify.simplify(d[x]))
