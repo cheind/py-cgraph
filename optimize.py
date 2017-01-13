@@ -75,7 +75,8 @@ def newton_descent(f, w0, w1, guess):
         g[1, 0] = d1[w1].eval(guess)
         return g
 
-    # Single step
+    # Single step is enough, since our objective function
+    # is of quadric shape.
     step = np.linalg.inv(nhessian(guess)).dot(ngrad(guess))
     guess[w0] -= step[0,0]
     guess[w1] -= step[1,0]
