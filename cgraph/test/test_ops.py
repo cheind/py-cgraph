@@ -1,4 +1,3 @@
-from pytest import approx
 import math
 
 from .test_helpers import checkf
