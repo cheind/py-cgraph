@@ -36,7 +36,53 @@ def least_squares(xy):
     b = xy[1,:].T
 
     return np.dot(np.dot(np.linalg.inv(np.dot(A.T,A)), A.T), b)
-    
+
+
+def steepest_descent(f, w0, w1, guess):
+    print('Entering steepest descent')
+
+    lam = 0.02
+
+    for i in range(100):
+        # Auto-diff, could also do f.sdiff() + eval for symbolic diff.        
+        df = f.ndiff(guess)
+
+        guess[w0] -= lam * df[w0]
+        guess[w1] -= lam * df[w1]
+
+        print('Error {}'.format(f.eval(guess)))
+
+    return guess
+
+def newton_descent(f, w0, w1, guess):
+    print('Entering Newton descent')
+
+    d1 = f.sdiff()        # gives df/dw0, df/dw1
+    d2w0 = d1[w0].sdiff() # gives ddf/dw0dw0, ddf/dw0dw1,
+    d2w1 = d1[w1].sdiff() # gives ddf/dw1dw1, ddf/dw1dw0,
+
+    def nhessian(guess):
+        h = np.zeros((2,2))
+        h[0,0] = d2w0[w0].eval(guess)
+        h[0,1] = d2w0[w1].eval(guess)
+        h[1,0] = d2w1[w0].eval(guess)
+        h[1,1] = d2w1[w1].eval(guess)
+        return h
+
+    def ngrad(guess):
+        g = np.zeros((2,1))
+        g[0, 0] = d1[w0].eval(guess)
+        g[1, 0] = d1[w1].eval(guess)
+        return g
+
+    # Single step
+    step = np.linalg.inv(nhessian(guess)).dot(ngrad(guess))
+    guess[w0] -= step[0,0]
+    guess[w1] -= step[1,0]
+
+    print('Error {}'.format(f.eval(guess)))
+
+    return guess
 
 if __name__ == '__main__':
 
@@ -45,7 +91,7 @@ if __name__ == '__main__':
     d = 2.0
 
     # Noisy line samples
-    samples = generate_points(40, k, d)
+    samples = generate_points(20, k, d)
     
     # The parameters we optimize for
     w0 = cg.Symbol('w0')
@@ -54,30 +100,16 @@ if __name__ == '__main__':
     # Build the computational graph
     f = sum_residuals_squared(w0, w1, samples)
     
-    # Initial guess for gradient descent
-    guess = {w0: 0., w1: 1.1}
-    step = 0.01
+    s_nd = newton_descent(f, w0, w1, {w0: 0.4, w1: 1.1})
+    s_sd = steepest_descent(f, w0, w1, {w0: 0.4, w1: 1.1})
+    s_fit = least_squares(samples)
 
-    for i in range(200):
-        # Auto-diff, could also do f.sdiff() + eval for symbolic diff.        
-        df = f.ndiff(guess)
-
-        guess[w0] -= step * df[w0]
-        guess[w1] -= step * df[w1]
-
-        print('Error {}'.format(f.eval(guess)))
-
-    # Draw the line fitted by least squares
-    fit = least_squares(samples)
-    plt.plot([0, 10], [0*fit[0]+fit[1], 10*fit[0]+fit[1]], color='r', linestyle='-', label='least squares')
+    # Draw results
+    plt.plot([0, 10], [0*s_fit[0]+s_fit[1], 10*s_fit[0]+s_fit[1]], color='r', linestyle='-', label='Least Squares')
+    plt.plot([0, 10], [0*s_sd[w0]+s_sd[w1], 10*s_sd[w0]+s_sd[w1]], color='g', linestyle='-', label='Steepest Descent')
+    plt.plot([0, 10], [0*s_nd[w0]+s_nd[w1], 10*s_nd[w0]+s_nd[w1]], color='b', linestyle='-', label='Newton Descent')
+    plt.plot([0, 10], [0*k+d, 10*k+d], color='k', linestyle=':', label='Ground Truth')
     
-    # Draw the ground truth line
     plt.scatter(samples[0,:], samples[1,:])
-    plt.plot([0, 10], [0*k+d, 10*k+d], color='k', linestyle=':', label='ground truth')
-    
-    # Draw the line found through optimization
-    plt.plot([0, 10], [0*guess[w0]+guess[w1], 10*guess[w0]+guess[w1]], color='g', linestyle='-', label='optimized')
     plt.legend()
     plt.show()
-
-
