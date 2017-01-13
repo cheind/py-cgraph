@@ -1,9 +1,21 @@
+"""Computational graph simplification.
+
+The code contained in this module attempts to simplify computational graph
+expressions. It works by applying a set of rules to the graph, that iteratively
+elimitates / replaces nodes. 
+
+Currently no rules except `x*1 = x` rule is provided. Symbolic differentiation
+generates plenty of these expressions.
+
+"""
+
 
 import cgraph.graphs as graphs
 
 
 
 def simplify(node, other_rules=None):
+    """Returns a simplified version of the forward graph associated with the given node."""
     t = graphs.GraphTraversal(node)
 
     rules = [multiply_by_one_rule]
@@ -11,17 +23,19 @@ def simplify(node, other_rules=None):
         rules.extend(other_rules)
 
     for n in t.forward_order():
-        # Apply rules, stop after first success
+        # Apply rules in order, stop after first success
         for r in rules:
             if r(n):
                 break
 
     return node
 
-def applies_to(klass):
+def applies_to(*klasses):
+    """Decorates rule functions to match specific nodes in simplification."""
+
     def wrapper(func):
         def wrapped_func(node):
-            if isinstance(node, klass):
+            if isinstance(node, klasses):
                 return func(node)
             else:
                 return False
