@@ -12,6 +12,18 @@ class Constant(cgraph.arithmetics.ArithmeticNode):
     def value(self, ctx):
         ctx.value = self._value
 
+    # Do we want constants to be unique?
+    # Both ways work, but generate different graphs.
+    
+    # def __hash__(self):
+    #     return hash(self._value)            
+    
+    # def __eq__(self, other):
+    #     if isinstance(other, self.__class__):
+    #         return self._value == other._value      
+    #     else:
+    #         return False
+
     def ngradient(self, ctx):
         pass
 
