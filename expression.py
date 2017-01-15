@@ -1,4 +1,5 @@
 from collections import defaultdict
+from numbers import Number
 
 class Node:
 
@@ -7,6 +8,12 @@ class Node:
 
     def __repr__(self):
         return self.__str__()
+
+    def __add__(self, other):
+        return sym_add(self, other)
+
+    def __mul__(self, other):
+        return sym_mul(self, other)
 
 class Symbol(Node):
 
@@ -79,6 +86,31 @@ class Mul(Node):
     def symbolic_gradient(self):
         return [self.children[1], self.children[0]]
 
+def wrap_args(func):
+    def wrapped(*args, **kwargs):
+        new_args = []
+        for a in args:
+            if isinstance(a, Number):
+                a = Constant(a)
+            new_args.append(a)
+        return func(*new_args, **kwargs)
+    return wrapped
+        
+@wrap_args
+def sym_add(x, y):
+    n = Add()
+    n.children[0] = x
+    n.children[1] = y
+    return n
+
+@wrap_args
+def sym_mul(x, y):
+    n = Mul()
+    n.children[0] = x
+    n.children[1] = y
+    return n
+
+
 def postorder(node):
     for c in node.children:
         yield from postorder(c)
@@ -132,6 +164,18 @@ def symbolic_derivatives(node):
 
     return derivatives
 
+def symbolic_derivatives2(node):
+    derivatives = defaultdict(lambda: Constant(0))
+    derivatives[node] = Constant(1)
+
+    for n in bfs(node):
+        d = derivatives[n]
+        g = n.symbolic_gradient()
+        for idx, c in enumerate(n.children):
+            derivatives[c] = derivatives[c] + (g[idx] * d)
+
+    return derivatives
+
 if __name__=='__main__':
 
     x = Symbol('x')
@@ -149,4 +193,5 @@ if __name__=='__main__':
 
     print(numeric_derivatives(mul))
     print(symbolic_derivatives(mul))
-    print(symbolic_derivatives(symbolic_derivatives(mul)[x]))
+    print(symbolic_derivatives2(mul))
+    #print(symbolic_derivatives(symbolic_derivatives(mul)[x]))
