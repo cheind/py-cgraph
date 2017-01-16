@@ -149,6 +149,14 @@ def sym_mul(x, y):
 def sym_sqr(x):
     return x*x
 
+def sym_sum(x):
+    assert len(x) > 0    
+    
+    n = x[0]
+    for idx in range(1, len(x)):
+        n = n + x[idx]
+    return n
+
 def postorder(node):
     for c in node.children:
         yield from postorder(c)
