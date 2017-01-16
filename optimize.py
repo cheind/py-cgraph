@@ -2,8 +2,7 @@
 
 import numpy as np
 
-import cgraph as cg
-from cgraph.ops.addition import sym_sum
+import expression as exp
 import matplotlib.pyplot as plt
 
 def generate_points(n, k, d):
@@ -13,7 +12,7 @@ def generate_points(n, k, d):
     y = x * k + d + np.random.normal(scale=0.1, size=n)
     return np.vstack((x,y))
 
-def sum_residuals_squared(w0, w1, xy):
+def sum_residuals_squared(w, xy):
     """Returns the symbolic computational graph for the objective minimization
     
     In particular this builds the computational graph that computes the average
@@ -23,10 +22,10 @@ def sum_residuals_squared(w0, w1, xy):
     n = xy.shape[1]
     residuals = []
     for i in range(n):
-        r = w0 * xy[0,i] + w1 - xy[1,i]
-        residuals.append(r**2)
+        r = w[0] * xy[0,i] + w[1] - xy[1,i]
+        residuals.append(exp.sym_sqr(r))
 
-    return sym_sum(residuals) / n
+    return exp.sym_sum(residuals)
 
 def least_squares(xy):
     """Returns the line parameters through ordinary least squares regression."""
@@ -38,19 +37,19 @@ def least_squares(xy):
     return np.dot(np.dot(np.linalg.inv(np.dot(A.T,A)), A.T), b)
 
 
-def steepest_descent(f, w0, w1, guess):
+def steepest_descent(f, w, guess):
     print('Entering steepest descent')
 
-    lam = 0.02
+    lam = 0.001
 
-    for i in range(100):
+    for i in range(400):
         # Auto-diff, could also do f.sdiff() + eval for symbolic diff.        
-        df = f.ndiff(guess)
+        df = exp.numeric_gradient(f, guess)
 
-        guess[w0] -= lam * df[w0]
-        guess[w1] -= lam * df[w1]
+        guess[w[0]] -= lam * df[w[0]]
+        guess[w[1]] -= lam * df[w[1]]
 
-        print('Error {}'.format(f.eval(guess)))
+        print('Error {}'.format(exp.value(f, guess)[f]))
 
     return guess
 
@@ -95,20 +94,22 @@ if __name__ == '__main__':
     samples = generate_points(20, k, d)
     
     # The parameters we optimize for
-    w0 = cg.Symbol('w0')
-    w1 = cg.Symbol('w1')    
+    w = [
+        exp.Symbol('w0'),
+        exp.Symbol('w1')
+    ]   
     
     # Build the computational graph
-    f = sum_residuals_squared(w0, w1, samples)
+    f = sum_residuals_squared(w, samples)
     
-    s_nd = newton_descent(f, w0, w1, {w0: 0.4, w1: 1.1})
-    s_sd = steepest_descent(f, w0, w1, {w0: 0.4, w1: 1.1})
+    #s_nd = newton_descent(f, w0, w1, {w0: 0.4, w1: 1.1})
+    s_sd = steepest_descent(f, w, {w[0]: 0.4, w[1]: 1.1})
     s_fit = least_squares(samples)
 
     # Draw results
     plt.plot([0, 10], [0*s_fit[0]+s_fit[1], 10*s_fit[0]+s_fit[1]], color='r', linestyle='-', label='Least Squares')
-    plt.plot([0, 10], [0*s_sd[w0]+s_sd[w1], 10*s_sd[w0]+s_sd[w1]], color='g', linestyle='-', label='Steepest Descent')
-    plt.plot([0, 10], [0*s_nd[w0]+s_nd[w1], 10*s_nd[w0]+s_nd[w1]], color='b', linestyle='-', label='Newton Descent')
+    plt.plot([0, 10], [0*s_sd[w[0]]+s_sd[w[1]], 10*s_sd[w[0]]+s_sd[w[1]]], color='g', linestyle='-', label='Steepest Descent')
+    #plt.plot([0, 10], [0*s_nd[w0]+s_nd[w1], 10*s_nd[w0]+s_nd[w1]], color='b', linestyle='-', label='Newton Descent')
     plt.plot([0, 10], [0*k+d, 10*k+d], color='k', linestyle=':', label='Ground Truth')
     
     plt.scatter(samples[0,:], samples[1,:])
