@@ -58,6 +58,12 @@ def test_sqr():
     f = exp.sym_sqr(x * 2 + y)
     checkf(f, {x:2, y:3}, value=7**2, ngrad={x: 2*7*2, y:2*7*1})
 
+def test_div():
+    x = exp.Symbol('x')
+    y = exp.Symbol('y')
+
+    f = x / y
+    checkf(f, {x:2, y:3}, value=2/3, ngrad={x: 1/3, y:-2/9})
 
 def test_reuse_of_expr():
     x = exp.Symbol('x')

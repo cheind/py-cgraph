@@ -18,6 +18,9 @@ class Node:
     def __mul__(self, other):
         return sym_mul(self, other)
 
+    def __truediv__(self, other):
+        return sym_div(self, other)
+
 class Symbol(Node):
 
     def __init__(self, name):
@@ -114,6 +117,35 @@ class Mul(Node):
     def symbolic_gradient(self):
         return [self.children[1], self.children[0]]
 
+def nan_on_fail(f):
+    try:
+        return f()
+    except (ArithmeticError, ValueError):
+        return float('nan')
+
+class Div(Node):
+
+    def __init__(self):
+        super(Div, self).__init__(nary=2)
+
+    def __str__(self):
+        return '({}/{})'.format(str(self.children[0]), str(self.children[1]))
+
+    def compute_value(self, values):
+        return values[self.children[0]] / values[self.children[1]]
+    
+    def compute_gradient(self, values):
+        return [
+            nan_on_fail(lambda: 1. / values[self.children[1]]), 
+            nan_on_fail(lambda: -values[self.children[0]]/ values[self.children[1]]**2)
+        ]
+    
+    def symbolic_gradient(self):
+        return [
+            Constant(1) / self.children[1],
+            Constant(-1) * self.children[0] / sym_sqr(self.children[1])
+        ]
+
 def wrap_args(func):
     def wrapped(*args, **kwargs):
         new_args = []
@@ -141,6 +173,13 @@ def sym_sub(x, y):
 @wrap_args
 def sym_mul(x, y):
     n = Mul()
+    n.children[0] = x
+    n.children[1] = y
+    return n
+
+@wrap_args
+def sym_div(x, y):
+    n = Div()
     n.children[0] = x
     n.children[1] = y
     return n
