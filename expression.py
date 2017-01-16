@@ -209,7 +209,7 @@ def bfs(node, node_data):
         for idx, c in enumerate(t[0].children):
             q.append((c, node_data[idx]))
             
-def value(f, fargs):
+def values(f, fargs):
     v = {}
     v.update(fargs)
     for n in postorder(f):
@@ -217,8 +217,11 @@ def value(f, fargs):
             v[n] = n.compute_value(v)
     return v
 
+def value(f, fargs):
+    return values(f, fargs)[f]
+    
 def numeric_gradient(f, fargs):
-    vals = value(f, fargs)
+    vals = values(f, fargs)
     derivatives = defaultdict(lambda: 0)
 
     gen = bfs(f, 1)

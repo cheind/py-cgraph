@@ -7,7 +7,7 @@ import expression as exp
 def checkf(f, fargs, value=None, ngrad=None):
     __tracebackhide__ = True
    
-    v = exp.value(f, fargs)[f]
+    v = exp.value(f, fargs)
     if value != approx(v):
         pytest.fail("""Function VALUE check failed
         f: {}
@@ -23,11 +23,11 @@ def checkf(f, fargs, value=None, ngrad=None):
             df/d{}
             expected value of {} - received {}""".format(f, k, ngrad[k], ng[k]))
 
-        if ngrad[k] != approx(exp.value(sg[k], fargs)[sg[k]]):
+        if ngrad[k] != approx(exp.value(sg[k], fargs)):
             pytest.fail("""Function SYMBOLIC GRAD check failed
             f: {}, 
             df/d{}: {},
-            expected value of {} - received {}""".format(f, k, sg[k], ngrad[k], exp.value(sg[k], fargs)[sg[k]]))
+            expected value of {} - received {}""".format(f, k, sg[k], ngrad[k], exp.value(sg[k], fargs)))
 
 
 def test_add():

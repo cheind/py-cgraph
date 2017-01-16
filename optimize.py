@@ -49,7 +49,7 @@ def steepest_descent(f, w, guess):
         guess[w[0]] -= lam * df[w[0]]
         guess[w[1]] -= lam * df[w[1]]
 
-        print('Error {}'.format(exp.value(f, guess)[f]))
+        print('Error {}'.format(exp.value(f, guess)))
 
     return guess
 
@@ -62,16 +62,16 @@ def newton_descent(f, w, guess):
 
     def nhessian(guess):
         h = np.zeros((2,2))
-        h[0,0] = exp.value(d2w0[w[0]], guess)[d2w0[w[0]]]
-        h[0,1] = exp.value(d2w0[w[1]], guess)[d2w0[w[1]]]
-        h[1,0] = exp.value(d2w1[w[0]], guess)[d2w1[w[0]]]
-        h[1,1] = exp.value(d2w1[w[1]], guess)[d2w1[w[1]]]
+        h[0,0] = exp.value(d2w0[w[0]], guess)
+        h[0,1] = exp.value(d2w0[w[1]], guess)
+        h[1,0] = exp.value(d2w1[w[0]], guess)
+        h[1,1] = exp.value(d2w1[w[1]], guess)
         return h
 
     def ngrad(guess):
         g = np.zeros((2,1))
-        g[0, 0] = exp.value(d1[w[0]], guess)[d1[w[0]]]
-        g[1, 0] = exp.value(d1[w[1]], guess)[d1[w[1]]]
+        g[0, 0] = exp.value(d1[w[0]], guess)
+        g[1, 0] = exp.value(d1[w[1]], guess)
         return g
 
     # Single step is enough, since our objective function
@@ -80,7 +80,7 @@ def newton_descent(f, w, guess):
     guess[w[0]] -= step[0,0]
     guess[w[1]] -= step[1,0]
 
-    print('Error {}'.format(exp.value(f, guess)[f]))
+    print('Error {}'.format(exp.value(f, guess)))
 
     return guess
 
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     d = 2.0
 
     # Noisy line samples
-    samples = generate_points(40, k, d)
+    samples = generate_points(20, k, d)
     
     # The parameters we optimize for
     w = [
