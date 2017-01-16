@@ -11,6 +11,9 @@ class Node:
 
     def __add__(self, other):
         return sym_add(self, other)
+    
+    def __sub__(self, other):
+        return sym_sub(self, other)
 
     def __mul__(self, other):
         return sym_mul(self, other)
@@ -20,19 +23,27 @@ class Symbol(Node):
     def __init__(self, name):
         super(Symbol, self).__init__(nary=0)
         self.name = name
-        self.value = None
 
     def __str__(self):
         return self.name
 
+    def __hash__(self):
+        return hash(self.name)            
+    
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.name == other.name      
+        else:
+            return False
+
     def compute_value(self, values):
-        return self.value
+        return values[self]
 
     def compute_gradient(self, values):
-        return None
+        return []
 
     def symbolic_gradient(self):
-        return None
+        return []
 
 class Constant(Node):
 
@@ -47,10 +58,10 @@ class Constant(Node):
         return self.value
 
     def compute_gradient(self, values):
-        return None
+        return []
 
     def symbolic_gradient(self):
-        return None
+        return []
 
 class Add(Node):
 
@@ -68,6 +79,23 @@ class Add(Node):
     
     def symbolic_gradient(self):
         return [Constant(1), Constant(1)]
+
+class Sub(Node):
+
+    def __init__(self):
+        super(Sub, self).__init__(nary=2)
+
+    def __str__(self):
+        return '({} - {})'.format(str(self.children[0]), str(self.children[1]))
+
+    def compute_value(self, values):
+        return values[self.children[0]] - values[self.children[1]]
+    
+    def compute_gradient(self, values):
+        return [1, -1]
+    
+    def symbolic_gradient(self):
+        return [Constant(1), Constant(-1)]
 
 class Mul(Node):
 
@@ -104,77 +132,70 @@ def sym_add(x, y):
     return n
 
 @wrap_args
+def sym_sub(x, y):
+    n = Sub()
+    n.children[0] = x
+    n.children[1] = y
+    return n
+
+@wrap_args
 def sym_mul(x, y):
     n = Mul()
     n.children[0] = x
     n.children[1] = y
     return n
 
+@wrap_args
+def sym_sqr(x):
+    return x*x
 
 def postorder(node):
     for c in node.children:
         yield from postorder(c)
     yield node
 
-def bfs(node):
-    q = [node]
+def bfs(node, node_data):
+    q = [(node, node_data)]
     while q:
-        n = q.pop(0)
-        yield n
-        for c in n.children:
-            q.append(c)
+        t = q.pop(0)
+        node_data = yield t
+        for idx, c in enumerate(t[0].children):
+            q.append((c, node_data[idx]))
             
-def numeric_values(node):
+def value(f, fargs):
     v = {}
-    for n in postorder(node):
+    v.update(fargs)
+    for n in postorder(f):
         if not n in v:
             v[n] = n.compute_value(v)
     return v
 
-def numeric_derivatives(node):
-    vals = numeric_values(node)
+def numeric_gradient(f, fargs):
+    vals = value(f, fargs)
     derivatives = defaultdict(lambda: 0)
-    derivatives[node] = 1.
 
-    for n in bfs(node):
-        d = derivatives[n]
-        g = n.compute_gradient(vals)
-        for idx, c in enumerate(n.children):
-            derivatives[c] += g[idx] * d
+    gen = bfs(f, 1)
+    try:
+        n, in_grad = next(gen)
+        while True:
+            derivatives[n] += in_grad
+            local_grad = n.compute_gradient(vals)
+            n, in_grad = gen.send([l*in_grad for l in local_grad])
+    except StopIteration:
+        return derivatives
 
-    return derivatives
 
-def symbolic_derivatives(node):
+def symbolic_gradient(f):
     derivatives = defaultdict(lambda: Constant(0))
-    derivatives[node] = Constant(1)
-
-    for n in bfs(node):
-        d = derivatives[n]
-        g = n.symbolic_gradient()
-        for idx, c in enumerate(n.children):
-            m = Mul()
-            m.children[0] = g[idx]
-            m.children[1] = d
-
-            a = Add()
-            a.children[0] = derivatives[c]
-            a.children[1] = m
-
-            derivatives[c] = a
-
-    return derivatives
-
-def symbolic_derivatives2(node):
-    derivatives = defaultdict(lambda: Constant(0))
-    derivatives[node] = Constant(1)
-
-    for n in bfs(node):
-        d = derivatives[n]
-        g = n.symbolic_gradient()
-        for idx, c in enumerate(n.children):
-            derivatives[c] = derivatives[c] + (g[idx] * d)
-
-    return derivatives
+    gen = bfs(f, Constant(1))
+    try:
+        n, in_grad = next(gen) # Need to use edge info when expressions are reused!
+        while True:
+            derivatives[n] = derivatives[n] + in_grad
+            local_grad = n.symbolic_gradient()
+            n, in_grad = gen.send([l * in_grad for l in local_grad])
+    except StopIteration:
+        return derivatives
 
 def applies_to(*klasses):
     """Decorates rule functions to match specific nodes in simplification."""
@@ -241,6 +262,7 @@ if __name__=='__main__':
 
     x = Symbol('x')
     y = Symbol('y')
+
     add = Add()
     add.children[0] = x
     add.children[1] = y
@@ -249,12 +271,11 @@ if __name__=='__main__':
     mul.children[0] = add
     mul.children[1] = x
 
-    x.value = 3
-    y.value = 2
-
-    print(numeric_derivatives(mul))
-    print(symbolic_derivatives(mul))
-    print(symbolic_derivatives2(mul))
+    values = {x: 3, y:2}
+    
+    print(numeric_gradient(mul, values))
+    print(symbolic_gradient(mul))
+    print(symbolic_gradient2(mul))
     print('simplification')
-    print(simplify(symbolic_derivatives2(mul)[x]))
+    print(simplify(symbolic_gradient2(mul)[x]))
     #print(symbolic_derivatives(symbolic_derivatives(mul)[x]))
