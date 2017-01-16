@@ -176,6 +176,67 @@ def symbolic_derivatives2(node):
 
     return derivatives
 
+def applies_to(*klasses):
+    """Decorates rule functions to match specific nodes in simplification."""
+
+    def wrapper(func):
+        def wrapped_func(node):
+            if isinstance(node, klasses):
+                return func(node)
+            else:
+                return node
+        return wrapped_func
+    return wrapper
+
+def is_const(node, value=None):
+    if isinstance(node, Constant):
+        if value is not None:
+            return node.value == value
+        else:
+            return True            
+    return False
+
+@applies_to(Mul)
+def mul_identity_rule(node):
+    if is_const(node.children[0], 1):
+        return node.children[1]
+    elif is_const(node.children[1], 1):
+        return node.children[0]
+    else:
+        return node
+
+@applies_to(Add)
+def add_identity_rule(node):
+    if is_const(node.children[0], 0):
+        return node.children[1]
+    elif is_const(node.children[1], 0):
+        return node.children[0]
+    else:
+        return node
+
+import copy
+def simplify(node, other_rules=None):
+    """Returns a simplified version of the forward graph associated with the given node."""
+
+    rules = [mul_identity_rule, add_identity_rule]
+    if other_rules:
+        rules.extend(other_rules)
+
+    nodemap = {}
+    for n in postorder(node):
+        if isinstance(n, Symbol):
+            continue
+
+        nc = copy.copy(n)
+        for i in range(len(nc.children)):
+            c = nc.children[i]
+            nc.children[i] = nodemap.get(c, c)
+        for r in rules:
+            nc = r(nc)
+        nodemap[n] = nc
+        
+    return nodemap[node]
+
 if __name__=='__main__':
 
     x = Symbol('x')
@@ -194,4 +255,6 @@ if __name__=='__main__':
     print(numeric_derivatives(mul))
     print(symbolic_derivatives(mul))
     print(symbolic_derivatives2(mul))
+    print('simplification')
+    print(simplify(symbolic_derivatives2(mul)[x]))
     #print(symbolic_derivatives(symbolic_derivatives(mul)[x]))
