@@ -285,11 +285,18 @@ def add_identity_rule(node):
     else:
         return node
 
+def eval_to_const_rule(node):
+    try:
+        k = value(node, {})
+        return Constant(k)
+    except KeyError:
+        return node
+
 import copy
 def simplify(node, other_rules=None):
     """Returns a simplified version of the forward graph associated with the given node."""
 
-    rules = [mul_identity_rule, add_identity_rule]
+    rules = [mul_identity_rule, add_identity_rule, eval_to_const_rule]
     if other_rules:
         rules.extend(other_rules)
 

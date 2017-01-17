@@ -29,6 +29,12 @@ def checkf(f, fargs, value=None, ngrad=None):
             df/d{}: {},
             expected value of {} - received {}""".format(f, k, sg[k], ngrad[k], exp.value(sg[k], fargs)))
 
+def complexity(f):
+    count = 0
+    for n in exp.postorder(f):
+        if len(n.children) > 0:
+            count += 1
+    return count
 
 def test_add():
     x = exp.Symbol('x')
@@ -72,3 +78,24 @@ def test_reuse_of_expr():
     xy = x * y
     f = (xy + 1) * xy
     checkf(f, {x:2, y:3}, value=42, ngrad={x: 39, y:26})
+
+def test_simplify_expr():
+    x = exp.Symbol('x')
+    y = exp.Symbol('y')
+
+    f = x + 0
+    s = exp.simplify(f)
+    assert complexity(f) > complexity(s)
+    assert exp.value(f, {x:2}) == exp.value(s, {x:2})
+
+    f = x * 1
+    s = exp.simplify(f)
+    assert complexity(f) > complexity(s)
+    assert exp.value(f, {x:2}) == exp.value(s, {x:2})
+
+    f = x + x + x + x + x
+    d = exp.symbolic_gradient(f)
+    dx = exp.simplify(d[x])
+    assert complexity(dx) == 0
+    assert exp.is_const(dx, 5)
+
