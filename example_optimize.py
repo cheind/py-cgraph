@@ -2,7 +2,7 @@
 
 import numpy as np
 
-import expression as exp
+import cgraph as cg
 import matplotlib.pyplot as plt
 
 def generate_points(n, k, d):
@@ -23,9 +23,9 @@ def sum_residuals_squared(w, xy):
     residuals = []
     for i in range(n):
         r = w[0] * xy[0,i] + w[1] - xy[1,i]
-        residuals.append(exp.sym_sqr(r))
+        residuals.append(cg.sym_sqr(r))
 
-    return exp.sym_sum(residuals) / n
+    return cg.sym_sum(residuals) / n
 
 def least_squares(xy):
     """Returns the line parameters through ordinary least squares regression."""
@@ -44,34 +44,34 @@ def steepest_descent(f, w, guess):
 
     for i in range(200):
         # Auto-diff, could also do f.sdiff() + eval for symbolic diff.        
-        df = exp.numeric_gradient(f, guess)
+        df = cg.numeric_gradient(f, guess)
 
         guess[w[0]] -= lam * df[w[0]]
         guess[w[1]] -= lam * df[w[1]]
 
-        print('Error {}'.format(exp.value(f, guess)))
+        print('Error {}'.format(cg.value(f, guess)))
 
     return guess
 
 def newton_descent(f, w, guess):
     print('Entering Newton descent')
 
-    d1 = exp.symbolic_gradient(f)        # gives df/dw0, df/dw1
-    d2w0 = exp.symbolic_gradient(d1[w[0]]) # gives ddf/dw0dw0, ddf/dw0dw1,
-    d2w1 = exp.symbolic_gradient(d1[w[1]]) # gives ddf/dw1dw1, ddf/dw1dw0,
+    d1 = cg.symbolic_gradient(f)        # gives df/dw0, df/dw1
+    d2w0 = cg.symbolic_gradient(d1[w[0]]) # gives ddf/dw0dw0, ddf/dw0dw1,
+    d2w1 = cg.symbolic_gradient(d1[w[1]]) # gives ddf/dw1dw1, ddf/dw1dw0,
 
     def nhessian(guess):
         h = np.zeros((2,2))
-        h[0,0] = exp.value(d2w0[w[0]], guess)
-        h[0,1] = exp.value(d2w0[w[1]], guess)
-        h[1,0] = exp.value(d2w1[w[0]], guess)
-        h[1,1] = exp.value(d2w1[w[1]], guess)
+        h[0,0] = cg.value(d2w0[w[0]], guess)
+        h[0,1] = cg.value(d2w0[w[1]], guess)
+        h[1,0] = cg.value(d2w1[w[0]], guess)
+        h[1,1] = cg.value(d2w1[w[1]], guess)
         return h
 
     def ngrad(guess):
         g = np.zeros((2,1))
-        g[0, 0] = exp.value(d1[w[0]], guess)
-        g[1, 0] = exp.value(d1[w[1]], guess)
+        g[0, 0] = cg.value(d1[w[0]], guess)
+        g[1, 0] = cg.value(d1[w[1]], guess)
         return g
 
     # Single step is enough, since our objective function
@@ -80,7 +80,7 @@ def newton_descent(f, w, guess):
     guess[w[0]] -= step[0,0]
     guess[w[1]] -= step[1,0]
 
-    print('Error {}'.format(exp.value(f, guess)))
+    print('Error {}'.format(cg.value(f, guess)))
 
     return guess
 
@@ -95,8 +95,8 @@ if __name__ == '__main__':
     
     # The parameters we optimize for
     w = [
-        exp.Symbol('w0'),
-        exp.Symbol('w1')
+        cg.Symbol('w0'),
+        cg.Symbol('w1')
     ]   
     
     # Build the computational graph

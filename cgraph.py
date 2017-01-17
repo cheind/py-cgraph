@@ -1,5 +1,6 @@
 from collections import defaultdict
 from numbers import Number
+import copy
 
 class Node:
 
@@ -293,7 +294,7 @@ def eval_to_const_rule(node):
     except KeyError:
         return node
 
-import copy
+
 def simplify(node, other_rules=None):
     """Returns a simplified version of the forward graph associated with the given node."""
 
