@@ -315,25 +315,3 @@ def simplify(node, other_rules=None):
         nodemap[n] = nc
         
     return nodemap[node]
-
-if __name__=='__main__':
-
-    x = Symbol('x')
-    y = Symbol('y')
-
-    add = Add()
-    add.children[0] = x
-    add.children[1] = y
-
-    mul = Mul()
-    mul.children[0] = add
-    mul.children[1] = x
-
-    values = {x: 3, y:2}
-    
-    print(numeric_gradient(mul, values))
-    print(symbolic_gradient(mul))
-    print(symbolic_gradient2(mul))
-    print('simplification')
-    print(simplify(symbolic_gradient2(mul)[x]))
-    #print(symbolic_derivatives(symbolic_derivatives(mul)[x]))
