@@ -1,0 +1,58 @@
+\documentclass{standalone}
+\usepackage{pgf, tikz}
+\usetikzlibrary{arrows, automata, positioning}
+
+\begin{document}
+
+    \begin{tikzpicture}[
+            > = stealth, 
+            shorten > = 1pt, 
+            auto,
+            node distance = 4cm,
+            semithick
+        ]
+
+        \tikzstyle{every state}=[
+            draw = black,
+            thick,
+            fill = white,
+            minimum size = 10mm
+        ]
+        \tikzset{every edge/.append style={font=\large}}
+
+		\node[state] (add) {$+$};
+        \node[state] (x) [above left of=add] {$x$};
+        \node[state] (y) [below left of=add] {$y$};        
+        \node[state] (mul) [right of=add] {$*$};
+        \coordinate[right of=mul] (f);
+        
+        % x,y op
+        \iffalse
+        \path[->] (x) edge [red] node [near start] {2} (add);
+        \path[->] (x) edge [red, bend left] node [near start] {2} (mul);
+        \path[->] (y) edge [red] node [near start] {3} (add);       
+        \path[->] (add) edge node {} (mul);
+        \path[->] (mul) edge node {} (f);
+        \fi
+        
+        % + op
+        \iffalse
+        \path[->] (x) edge node [near start] {2} (add);
+        \path[->] (x) edge [bend left] node [near start] {2} (mul);
+        \path[->] (y) edge node [near start] {3} (add);       
+        \path[->] (add) edge [red] node {5} (mul);
+        \path[->] (mul) edge node {} (f);
+   		\fi
+        
+        % * op
+  		\iffalse
+        \path[->] (x) edge node [near start] {2} (add);
+        \path[->] (x) edge [bend left] node [near start] {2} (mul);
+        \path[->] (y) edge node [near start] {3} (add);       
+        \path[->] (add) edge node {5} (mul);
+        \path[->] (mul) edge [red] node {10} (f);
+        \fi
+        
+    \end{tikzpicture}
+
+\end{document}
