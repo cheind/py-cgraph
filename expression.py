@@ -189,7 +189,8 @@ def sym_sqr(x):
     return x*x
 
 def sym_sum(x):
-    assert len(x) > 0    
+    if len(x) == 0:
+        return Constant(0)   
     
     n = x[0]
     for idx in range(1, len(x)):
