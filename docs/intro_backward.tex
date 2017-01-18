@@ -18,7 +18,7 @@
             fill = white,
             minimum size = 10mm
         ]
-        \tikzset{every edge/.append style={font=\footnotesize}}
+        \tikzset{every edge/.append style={font=\large}}
 
 		\node[state] (add) {$+$};
         \node[state] (x) [above left=2.5cm and 1cm of add] {$x$};
@@ -29,8 +29,8 @@
         \path[->,transform canvas={xshift=0.5ex}] (x) edge node[above right] {$x$} (add);        
         \path[->,transform canvas={yshift=-0.5ex}] (x) edge node[below left] {$x$} (mul);        
         \path[->,transform canvas={xshift=0.5ex}] (y) edge node[below right] {$y$} (add);        
-        \path[->,transform canvas={yshift=0.5ex}] (add) edge node {$a(x,y)$} (mul);
-        \path[->,transform canvas={yshift=0.5ex}] (mul) edge node {$f(x,a)$} (f);
+        \path[->,transform canvas={yshift=0.5ex}] (add) edge node[near start] {$a(x,y)$} (mul);
+        \path[->,transform canvas={yshift=0.5ex}] (mul) edge node[near start] {$f(x,a)$} (f);
       
         % partial edges
         \iftrue

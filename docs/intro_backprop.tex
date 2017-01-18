@@ -26,19 +26,18 @@
         \node[state] (mul) [right of=add] {$*$};
         \coordinate[right of=mul] (f);
         
-        \path[->,transform canvas={xshift=0.5ex}] (x) edge node[above right] {$x$} (add);        
-        \path[->,transform canvas={yshift=-0.5ex}] (x) edge node[below left] {$x$} (mul);        
-        \path[->,transform canvas={xshift=0.5ex}] (y) edge node[below right] {$y$} (add);        
-        \path[->,transform canvas={yshift=0.5ex}] (add) edge node[near start] {$a(x,y)$} (mul);
-        \path[->,transform canvas={yshift=0.5ex}] (mul) edge node[near start] {$f(x,a)$} (f);
+        \path[->,transform canvas={xshift=0.5ex}] (x) edge node[above right] {$2$} (add);        
+        \path[->,transform canvas={yshift=-0.5ex}] (x) edge node[below left] {$2$} (mul);        
+        \path[->,transform canvas={xshift=0.5ex}] (y) edge node[below right] {$3$} (add);        
+        \path[->,transform canvas={yshift=0.5ex}] (add) edge node {$5$} (mul);
+        \path[->,transform canvas={yshift=0.5ex}] (mul) edge node {$10$} (f);
       
       
-        \path[->,transform canvas={yshift=-0.5ex}] (f) edge [red] node {$\frac{\mathrm{d}f(x,a)}{\mathrm{d}f(x,a)}$} (mul);
-        \path[->,transform canvas={yshift=0.5ex}] (mul) edge [red] node[above, rotate=-30] {$\frac{\mathrm{d}f(x,a)}{\mathrm{d}f(x,a)}\frac{\mathrm{d}f(x,a)}{\mathrm{d}x}$} (x);
-        \path[->,transform canvas={yshift=-0.5ex}] (mul) edge [red] node {$\frac{\mathrm{d}f(x,a)}{\mathrm{d}f(x,a)}\frac{\mathrm{d}f(x,a)}{\mathrm{d}a(x,y)}$} (add);
-        \path[->,transform canvas={xshift=-0.5ex}] (add) edge [red] node[above left, rotate=60, pos=-0.02] {$\frac{\mathrm{d}f(x,a)}{\mathrm{d}f(x,a)}\frac{\mathrm{d}f(x,a)}{\mathrm{d}a(x,y)}\frac{\mathrm{d}a(x,y)}{\mathrm{d}y}$} (y);
-        
-        \path[->,transform canvas={xshift=-0.5ex}] (add) edge [red] node[below, rotate=-62, pos=0.45] {$\frac{\mathrm{d}f(x,a)}{\mathrm{d}f(x,a)}\frac{\mathrm{d}f(x,a)}{\mathrm{d}a(x,y)}\frac{\mathrm{d}a(x,y)}{\mathrm{d}x}$} (x);
+        \path[->,transform canvas={yshift=-0.5ex}] (f) edge[red] node {$1$} (mul);
+        \path[->,transform canvas={yshift=0.5ex}] (mul) edge[red] node[above, rotate=-30] {$1*5$} (x);
+        \path[->,transform canvas={yshift=-0.5ex}] (mul) edge[red] node {$1*2$} (add);
+        \path[->,transform canvas={xshift=-0.5ex}] (add) edge[red] node[above, rotate=60] {$1*2*1$} (y);        
+        \path[->,transform canvas={xshift=-0.5ex}] (add) edge[red] node[below, rotate=-62, pos=0.45] {$1*2*1$} (x);
         
 
     \end{tikzpicture}
