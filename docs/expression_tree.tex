@@ -1,0 +1,36 @@
+\documentclass{standalone}
+\usepackage{pgf, tikz}
+\usetikzlibrary{arrows, automata, positioning}
+
+\begin{document}
+
+    \begin{tikzpicture}[
+            > = stealth, 
+            shorten > = 1pt, 
+            auto,
+            node distance = 3cm,
+            semithick
+        ]
+
+        \tikzstyle{every state}=[
+            draw = black,
+            thick,
+            fill = white,
+            minimum size = 10mm
+        ]
+        %\tikzset{every edge/.append style={font=\large}}
+		
+        \node[state] (mul) {$*$};
+        \node[state] (add)[below left= of mul] {$+$};
+        \node[state] (x) [below left= of add] {$x$};
+        \node[state] (y) [below right= of add] {$y$};  
+        \node[state] (x2) [below right= of mul] {$x$};
+        
+        \path[->] (mul) edge node[] {} (add);
+        \path[->] (mul) edge node[] {} (x2);
+        \path[->] (add) edge node[] {} (x);
+        \path[->] (add) edge node[] {} (y);
+        
+    \end{tikzpicture}
+
+\end{document}
