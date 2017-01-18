@@ -1,0 +1,46 @@
+\documentclass{standalone}
+\usepackage{pgf, tikz}
+\usetikzlibrary{arrows, automata, positioning}
+
+\begin{document}
+
+    \begin{tikzpicture}[
+            > = stealth, 
+            shorten > = 1pt, 
+            auto,
+            node distance = 4cm,
+            semithick
+        ]
+
+        \tikzstyle{every state}=[
+            draw = black,
+            thick,
+            fill = white,
+            minimum size = 10mm
+        ]
+        %\tikzset{every edge/.append style={font=\large}}
+
+		\node[state] (add) {$+$};
+        \node[state] (x) [above left=3cm and 1.5cm of add] {$x$};
+        \node[state] (y) [below left=3cm and 1.5cm of add] {$y$};        
+        \node[state] (mul) [right of=add] {$*$};
+        \coordinate[right of=mul] (f);
+        
+        \path[->,transform canvas={xshift=0.5ex}] (x) edge node[above right] {$x$} (add);        
+        \path[->,transform canvas={yshift=-0.5ex}] (x) edge node[below left] {$x$} (mul);        
+        \path[->,transform canvas={xshift=0.5ex}] (y) edge node[below right] {$y$} (add);        
+        \path[->,transform canvas={yshift=0.5ex}] (add) edge node[near start] {$a(x,y)$} (mul);
+        \path[->,transform canvas={yshift=0.5ex}] (mul) edge node[near start] {$f(x,a)$} (f);
+      
+      
+        \path[->,transform canvas={yshift=-0.5ex}] (f) edge [red] node {$\frac{\mathrm{d}f(x,a)}{\mathrm{d}f(x,a)}$} (mul);
+        \path[->,transform canvas={yshift=0.5ex}] (mul) edge [red] node[above, rotate=-30] {$\frac{\mathrm{d}f(x,a)}{\mathrm{d}f(x,a)}\frac{\mathrm{d}f(x,a)}{\mathrm{d}x}$} (x);
+        \path[->,transform canvas={yshift=-0.5ex}] (mul) edge [red] node {$\frac{\mathrm{d}f(x,a)}{\mathrm{d}f(x,a)}\frac{\mathrm{d}f(x,a)}{\mathrm{d}a(x,y)}$} (add);
+        \path[->,transform canvas={xshift=-0.5ex}] (add) edge [red] node[above left, rotate=60, pos=-0.02] {$\frac{\mathrm{d}f(x,a)}{\mathrm{d}f(x,a)}\frac{\mathrm{d}f(x,a)}{\mathrm{d}a(x,y)}\frac{\mathrm{d}a(x,y)}{\mathrm{d}y}$} (y);
+        
+        \path[->,transform canvas={xshift=-0.5ex}] (add) edge [red] node[below, rotate=-62, pos=0.45] {$\frac{\mathrm{d}f(x,a)}{\mathrm{d}f(x,a)}\frac{\mathrm{d}f(x,a)}{\mathrm{d}a(x,y)}\frac{\mathrm{d}a(x,y)}{\mathrm{d}x}$} (x);
+        
+
+    \end{tikzpicture}
+
+\end{document}
