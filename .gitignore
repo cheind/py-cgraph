@@ -47,3 +47,4 @@ Temporary Items
 .apdisk
 *.pyc
 .cache/v/cache/lastfailed
+docs/.ipynb_checkpoints/Computational Graphs-checkpoint.ipynb

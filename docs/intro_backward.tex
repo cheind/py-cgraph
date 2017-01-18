@@ -18,7 +18,7 @@
             fill = white,
             minimum size = 10mm
         ]
-        %\tikzset{every edge/.append style={font=\large}}
+        \tikzset{every edge/.append style={font=\footnotesize}}
 
 		\node[state] (add) {$+$};
         \node[state] (x) [above left=2.5cm and 1cm of add] {$x$};
@@ -26,19 +26,19 @@
         \node[state] (mul) [right of=add] {$*$};
         \coordinate[right of=mul] (f);
         
-        \path[->] (x) edge node {$\hat{x}$} (add);        
-        \path[->] (x) edge [bend left=5] node {$\hat{x}$} (mul);        
-        \path[->] (y) edge node {$\hat{y}$} (add);        
-        \path[->] (add) edge node {$a$} (mul);
-        \path[->] (mul) edge node {$f$} (f);
+        \path[->,transform canvas={xshift=0.5ex}] (x) edge node[above right] {$x$} (add);        
+        \path[->,transform canvas={yshift=-0.5ex}] (x) edge node[below left] {$x$} (mul);        
+        \path[->,transform canvas={xshift=0.5ex}] (y) edge node[below right] {$y$} (add);        
+        \path[->,transform canvas={yshift=0.5ex}] (add) edge node {$a(x,y)$} (mul);
+        \path[->,transform canvas={yshift=0.5ex}] (mul) edge node {$f(x,a)$} (f);
       
         % partial edges
         \iftrue
-        \path[->] (add) edge [red, bend left=10] node {$\frac{\mathrm{d}a}{\mathrm{d}\hat{x}} = 1$} (x);
-        \path[->] (mul) edge [red, bend left=5] node {$\frac{\mathrm{d}f}{\mathrm{d}\hat{x}} = a$} (x);
-        \path[->] (add) edge [red, bend left=10] node {$\frac{\mathrm{d}a}{\mathrm{d}\hat{y}} = 1$} (y);
-        \path[->] (mul) edge [red, bend left=10] node {$\frac{\mathrm{d}f}{\mathrm{d}a} = \hat{x}$} (add);
-        \path[->] (f) edge [red, bend left=10] node {$\frac{\mathrm{d}f}{\mathrm{d}f} = 1$} (mul);
+        \path[->,transform canvas={xshift=-0.5ex}] (add) edge [red] node[below,  rotate=-62] {$\frac{\mathrm{d}a(x,y)}{\mathrm{d}x} = 1$} (x);
+        \path[->,transform canvas={yshift=0.5ex}] (mul) edge [red] node[above, rotate=-30] {$\frac{\mathrm{d}f(x,a)}{\mathrm{d}x} = a(x,y)$} (x);
+        \path[->,transform canvas={xshift=-0.5ex}] (add) edge [red] node[above left, rotate=62, pos=0.2] {$\frac{\mathrm{d}a(x,y)}{\mathrm{d}y} = 1$} (y);
+        \path[->,transform canvas={yshift=-0.5ex}] (mul) edge [red] node {$\frac{\mathrm{d}f(x,a)}{\mathrm{d}a(x,y)} = x$} (add);
+        \path[->,transform canvas={yshift=-0.5ex}] (f) edge [red] node {$\frac{\mathrm{d}f(x,a)}{\mathrm{d}f(x,a)} = 1$} (mul);
         \fi
         
 
