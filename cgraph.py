@@ -163,7 +163,7 @@ class Div(Node):
     def symbolic_gradient(self):
         return [
             Constant(1) / self.children[1],
-            -self.children[0] / sym_sqr(self.children[1])
+            -self.children[0] / self.children[1]**2
         ]
 
 class Logartihm(Node):
@@ -282,10 +282,6 @@ def sym_pow(x, y):
     n.children[0] = x
     n.children[1] = y
     return n
-
-@wrap_args
-def sym_sqr(x):
-    return x*x
 
 def sym_sum(x):
     if len(x) == 0:
