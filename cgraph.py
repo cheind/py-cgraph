@@ -365,7 +365,7 @@ def bfs(node, node_data):
             
 def values(f, fargs):
     """
-    Forward evaluation of the expression tree given by `f` to compute values every node.
+    Returns a dictionary of computed values for each node in the expression tree including `f`.
     
     It is assumed by the implementation of this function that missing values
     for Symbols are given in `fargs`.
