@@ -10,4 +10,36 @@ The code is accompanied by a series of notebooks that explain fundamental concep
 1. [01 Computational Graphs - Symbolic Computation](docs/01_Computational_Graphs-Symbolic_Computation.ipynb)
 1. [02 Computational Graphs - Function Optimization](docs/02_Computational_Graphs-Function_Optimization.ipynb)
 
-There are certainly plenty of typos, grammatical errors and all kind of improvements possible. In case you have one for me, I'd be happy to see your pull requests or comments.
+There are certainly plenty of typos, grammatical errors and all kind of improvements possible. In case you have one for me, I'd be happy to see your pull requests or comments!
+
+The code for symbolic computation contained in [cgraph.py](cgraph.py) can be used as follows.
+
+```python
+import cgraph as cg
+
+x = cg.Symbol('x')
+y = cg.Symbol('y')
+z = cg.Symbol('z')
+
+f = (x * y + 3) / (z - 2)
+
+# Evaluate function
+cg.value(f, {x:2, y:3, z:3}) # 9.0
+
+# Partial derivatives (numerically)
+d = cg.numeric_gradient(f, {x:2, y:3, z:3})
+d[x] # df/dx 3.0
+d[z] # df/dz -9.0
+
+# Partial derivatives (symbolically)
+d = cg.symbolic_gradient(f)
+cg.simplify(d[x]) # (y*(1/(z - 2)))
+cg.value(d[x], {x:2, y:3, z:3}) # 3.0
+
+# Higher order derivatives
+ddx = cg.symbolic_gradient(d[x])
+cg.simplify(ddx[y]) # ddf/dxdy
+# (1/(z - 2))
+```
+
+For a more complete example see [example_optimize.py](example_optimize.py)
