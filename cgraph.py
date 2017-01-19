@@ -1,9 +1,28 @@
+"""CGraph - symbolic computation in Python library.
+
+This library is the result of my efforts to understand symbolic computation of
+functions factored as expression trees. In a few lines of code it shows how to
+forward evaluate functions and how to perform numeric and symbolic derivatives
+computations using backpropagation.
+
+While this library is not complete (and will never be) it offers the interested
+reader some insights on one way in which symbolic computation can be performed.
+
+The code is accompanied by a series of notebooks that explain the fundamental
+concepts. You can find these notebooks online at
+
+    https://github.com/cheind/py-cgraph
+
+Christoph Heindl, 2017
+"""
+
 from collections import defaultdict
 from numbers import Number
 import copy
 import math
 
 class Node:
+    """A base class for operations, symbols and constants in an expression tree."""
 
     def __init__(self, nary=0):
         self.children = [None]*nary
@@ -42,6 +61,10 @@ class Node:
         return sym_pow(self, other)
 
 class Symbol(Node):
+    """
+    Represents a terminal node that might be associated with a scalar value.    
+    Symbols are uniquely determined by their name.
+    """
 
     def __init__(self, name):
         super(Symbol, self).__init__(nary=0)
@@ -69,6 +92,7 @@ class Symbol(Node):
         return []
 
 class Constant(Node):
+    """Represents a constant value in an expression tree."""
 
     def __init__(self, value):
         super(Constant, self).__init__(nary=0)
@@ -87,6 +111,7 @@ class Constant(Node):
         return []
 
 class Add(Node):
+    """Binary addition of two nodes."""
 
     def __init__(self):
         super(Add, self).__init__(nary=2)
@@ -104,6 +129,7 @@ class Add(Node):
         return [Constant(1), Constant(1)]
 
 class Sub(Node):
+    """Binary subtraction of two nodes."""
 
     def __init__(self):
         super(Sub, self).__init__(nary=2)
@@ -121,6 +147,7 @@ class Sub(Node):
         return [Constant(1), Constant(-1)]
 
 class Mul(Node):
+    """Binary multiplication of two nodes."""
 
     def __init__(self):
         super(Mul, self).__init__(nary=2)
@@ -138,12 +165,14 @@ class Mul(Node):
         return [self.children[1], self.children[0]]
 
 def nan_on_fail(f):
+    """Catches math exceptions when evaluating `f` and turns them into NAN."""
     try:
         return f()
     except (ArithmeticError, ValueError):
         return float('nan')
 
 class Div(Node):
+    """Binary division of two nodes."""
 
     def __init__(self):
         super(Div, self).__init__(nary=2)
@@ -167,6 +196,7 @@ class Div(Node):
         ]
 
 class Logartihm(Node):
+    """Natural logarithm of a node."""
 
     def __init__(self):
         super(Logartihm, self).__init__(nary=1)
@@ -185,6 +215,7 @@ class Logartihm(Node):
 
 
 class Neg(Node):
+    """Unary negation of a node."""
 
     def __init__(self):
         super(Neg, self).__init__(nary=1)
@@ -203,6 +234,7 @@ class Neg(Node):
 
 
 class Pow(Node):
+    """Binary exponentiation `x**y`."""
 
     def __init__(self):
         super(Pow, self).__init__(nary=2)
@@ -227,6 +259,7 @@ class Pow(Node):
         
 
 def wrap_args(func):
+    """Decorator that turns plain number arguments into Constant objects."""
     def wrapped(*args, **kwargs):
         new_args = []
         for a in args:
@@ -238,6 +271,7 @@ def wrap_args(func):
         
 @wrap_args
 def sym_add(x, y):
+    """Returns a new node that represents of `x+y`."""
     n = Add()
     n.children[0] = x
     n.children[1] = y
@@ -245,6 +279,7 @@ def sym_add(x, y):
 
 @wrap_args
 def sym_sub(x, y):
+    """Returns a new node that represents of `x-y`."""
     n = Sub()
     n.children[0] = x
     n.children[1] = y
@@ -252,6 +287,7 @@ def sym_sub(x, y):
 
 @wrap_args
 def sym_mul(x, y):
+    """Returns a new node that represents of `x*y`."""
     n = Mul()
     n.children[0] = x
     n.children[1] = y
@@ -259,6 +295,7 @@ def sym_mul(x, y):
 
 @wrap_args
 def sym_div(x, y):
+    """Returns a new node that represents of `x/y`."""
     n = Div()
     n.children[0] = x
     n.children[1] = y
@@ -266,24 +303,32 @@ def sym_div(x, y):
 
 @wrap_args
 def sym_log(x):
+    """Returns a new node that represents of `ln(x)`."""
     n = Logartihm()
     n.children[0] = x
     return n
 
 @wrap_args
 def sym_neg(x):
+    """Returns a new node that represents of `-x`."""
     n = Neg()
     n.children[0] = x
     return n
 
 @wrap_args
 def sym_pow(x, y):
+    """Returns a new node that represents of `x**y`."""
     n = Pow()
     n.children[0] = x
     n.children[1] = y
     return n
 
 def sym_sum(x):
+    """
+    Returns a new node that represents the sum over all elements in `x`.
+    Currently this is accomplished by a series of binary additions. One might
+    however also consider a more efficient implementation using a new n-ary Sum node.
+    """
     if len(x) == 0:
         return Constant(0)   
     
@@ -293,11 +338,24 @@ def sym_sum(x):
     return n
 
 def postorder(node):
+    """
+    Yields all nodes discovered by depth-first-search in post-order starting from node.
+
+    Note, this implementation uses a recursion. As such it has a limit on the
+    how depth expression trees can become before Python raises maximum recursion depth exception.
+    """
     for c in node.children:
         yield from postorder(c)
     yield node
 
 def bfs(node, node_data):
+    """
+    Yields all nodes and associated data in breadth-first-search.
+
+    Each node will be attached a node data. It is expected by this
+    implementation that the caller returns (generator.send) an array
+    of node_data (one for each child) for the current node processed.
+    """
     q = [(node, node_data)]
     while q:
         t = q.pop(0)
@@ -306,6 +364,12 @@ def bfs(node, node_data):
             q.append((c, node_data[idx]))
             
 def values(f, fargs):
+    """
+    Forward evaluation of the expression tree given by `f` to compute values every node.
+    
+    It is assumed by the implementation of this function that missing values
+    for Symbols are given in `fargs`.
+    """
     v = {}
     v.update(fargs)
     for n in postorder(f):
@@ -314,9 +378,11 @@ def values(f, fargs):
     return v
 
 def value(f, fargs):
+    """Shortcut for `values(f, fargs)[f]`."""
     return values(f, fargs)[f]
     
 def numeric_gradient(f, fargs):
+    """Computes the numerical partial derivatives of `f` with respect to all nodes using backpropagation."""
     vals = values(f, fargs)
     derivatives = defaultdict(lambda: 0)
 
@@ -332,6 +398,7 @@ def numeric_gradient(f, fargs):
 
 
 def symbolic_gradient(f):
+    """Computes the symbolic partial derivatives of `f` with respect to all nodes using backpropagation."""
     derivatives = defaultdict(lambda: Constant(0))
     gen = bfs(f, Constant(1))
     try:
@@ -344,7 +411,7 @@ def symbolic_gradient(f):
         return derivatives
 
 def applies_to(*klasses):
-    """Decorates rule functions to match specific nodes in simplification."""
+    """Decorates functions to match specific nodes only in rule based expression simplification."""
 
     def wrapper(func):
         def wrapped_func(node):
@@ -356,6 +423,7 @@ def applies_to(*klasses):
     return wrapper
 
 def is_const(node, value=None):
+    """Returns true when the node is Constant and matched `value`."""
     if isinstance(node, Constant):
         if value is not None:
             return node.value == value
@@ -365,6 +433,8 @@ def is_const(node, value=None):
 
 @applies_to(Mul)
 def mul_identity_rule(node):
+    """Simplifies `x*1` to `x`."""
+
     if is_const(node.children[0], 1):
         return node.children[1]
     elif is_const(node.children[1], 1):
@@ -374,6 +444,8 @@ def mul_identity_rule(node):
 
 @applies_to(Add)
 def add_identity_rule(node):
+    """Simplifies `x+0` to `x`."""
+
     if is_const(node.children[0], 0):
         return node.children[1]
     elif is_const(node.children[1], 0):
@@ -382,6 +454,7 @@ def add_identity_rule(node):
         return node
 
 def eval_to_const_rule(node):
+    """Simplifies every expression made of Constants only to a single Constant."""
     try:
         k = value(node, {})
         return Constant(k)
@@ -389,14 +462,15 @@ def eval_to_const_rule(node):
         return node
 
 
-simplification_rules = [
+"""Default simplification rules. Add more if needed."""
+simplification_rules = [    
     mul_identity_rule, 
     add_identity_rule, 
     eval_to_const_rule
 ]
 
 def simplify(node):
-    """Returns a simplified version of the forward graph associated with the given node."""
+    """Returns a simplified version of the expression tree associated with `node`."""
 
     nodemap = {}
     for n in postorder(node):
@@ -414,6 +488,7 @@ def simplify(node):
     return nodemap[node]
 
 def simplify_all(nodes):
+    """Returns simplified expression trees for all nodes in the given collection."""
     if isinstance(nodes, (defaultdict, dict)):
         result = copy.copy(nodes)
         for k, v in nodes.items():
