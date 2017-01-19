@@ -47,3 +47,5 @@ Temporary Items
 .apdisk
 *.pyc
 .cache/v/cache/lastfailed
+.ipynb_checkpoints
+docs/debug.log
