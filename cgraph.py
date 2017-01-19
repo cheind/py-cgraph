@@ -295,12 +295,14 @@ def eval_to_const_rule(node):
         return node
 
 
-def simplify(node, other_rules=None):
-    """Returns a simplified version of the forward graph associated with the given node."""
+simplification_rules = [
+    mul_identity_rule, 
+    add_identity_rule, 
+    eval_to_const_rule
+]
 
-    rules = [mul_identity_rule, add_identity_rule, eval_to_const_rule]
-    if other_rules:
-        rules.extend(other_rules)
+def simplify(node):
+    """Returns a simplified version of the forward graph associated with the given node."""
 
     nodemap = {}
     for n in postorder(node):
@@ -311,8 +313,21 @@ def simplify(node, other_rules=None):
         for i in range(len(nc.children)):
             c = nc.children[i]
             nc.children[i] = nodemap.get(c, c)
-        for r in rules:
+        for r in simplification_rules:
             nc = r(nc)
         nodemap[n] = nc
         
     return nodemap[node]
+
+def simplify_all(nodes):
+    if isinstance(nodes, (defaultdict, dict)):
+        result = copy.copy(nodes)
+        for k, v in nodes.items():
+            result[k] = simplify(v)
+        return result
+    elif isinstance(nodes, (list, tuple)):
+        result = []
+        for n in nodes:
+            result.append(simplify(n))
+        return result
+
