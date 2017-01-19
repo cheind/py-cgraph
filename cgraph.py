@@ -1,6 +1,7 @@
 from collections import defaultdict
 from numbers import Number
 import copy
+import math
 
 class Node:
 
@@ -12,15 +13,33 @@ class Node:
 
     def __add__(self, other):
         return sym_add(self, other)
+
+    def __radd__(self, other):
+        return sym_add(other, self)
     
     def __sub__(self, other):
         return sym_sub(self, other)
-
+    
+    def __rsub__(self, other):
+        return sym_sub(other, self)
+    
     def __mul__(self, other):
         return sym_mul(self, other)
 
+    def __rmul__(self, other):
+        return sym_mul(other, self)    
+
     def __truediv__(self, other):
         return sym_div(self, other)
+
+    def __rtruediv__(self, other):
+        return sym_div(other, self)
+
+    def __neg__(self):
+        return sym_neg(self)
+
+    def __pow__(self, other):
+        return sym_pow(self, other)
 
 class Symbol(Node):
 
@@ -133,7 +152,7 @@ class Div(Node):
         return '({}/{})'.format(str(self.children[0]), str(self.children[1]))
 
     def compute_value(self, values):
-        return values[self.children[0]] / values[self.children[1]]
+        return nan_on_fail(lambda: values[self.children[0]] / values[self.children[1]])
     
     def compute_gradient(self, values):
         return [
@@ -144,8 +163,68 @@ class Div(Node):
     def symbolic_gradient(self):
         return [
             Constant(1) / self.children[1],
-            Constant(-1) * self.children[0] / sym_sqr(self.children[1])
+            -self.children[0] / sym_sqr(self.children[1])
         ]
+
+class Logartihm(Node):
+
+    def __init__(self):
+        super(Logartihm, self).__init__(nary=1)
+
+    def __str__(self):
+        return 'log({})'.format(str(self.children[0]))
+
+    def compute_value(self, values):
+        return nan_on_fail(lambda: math.log(values[self.children[0]]))
+
+    def compute_gradient(self, values):
+        return [nan_on_fail(lambda: 1. / values[self.children[0]])]
+
+    def symbolic_gradient(self):
+        return [Constant(1) / self.children[0]]
+
+
+class Neg(Node):
+
+    def __init__(self):
+        super(Neg, self).__init__(nary=1)
+
+    def __str__(self):
+        return '-{}'.format(str(self.children[0]))
+
+    def compute_value(self, values):
+        return -values[self.children[0]]
+
+    def compute_gradient(self, values):
+        return [-1]
+
+    def symbolic_gradient(self):
+        return [Constant(-1)]
+
+
+class Pow(Node):
+
+    def __init__(self):
+        super(Pow, self).__init__(nary=2)
+
+    def __str__(self):
+        return '{}**{}'.format(str(self.children[0]), str(self.children[1]))
+
+    def compute_value(self, values):
+        return values[self.children[0]]**values[self.children[1]]
+
+    def compute_gradient(self, values):
+        return [
+            values[self.children[1]] * values[self.children[0]]**(values[self.children[1]]-1),
+            nan_on_fail(lambda: values[self] * math.log(values[self.children[0]]))
+        ]
+
+    def symbolic_gradient(self):
+        return [
+            self.children[1] * self.children[0] ** (self.children[1]-1),
+            self * sym_log(self.children[0])
+        ]
+        
 
 def wrap_args(func):
     def wrapped(*args, **kwargs):
@@ -181,6 +260,25 @@ def sym_mul(x, y):
 @wrap_args
 def sym_div(x, y):
     n = Div()
+    n.children[0] = x
+    n.children[1] = y
+    return n
+
+@wrap_args
+def sym_log(x):
+    n = Logartihm()
+    n.children[0] = x
+    return n
+
+@wrap_args
+def sym_neg(x):
+    n = Neg()
+    n.children[0] = x
+    return n
+
+@wrap_args
+def sym_pow(x, y):
+    n = Pow()
     n.children[0] = x
     n.children[1] = y
     return n
