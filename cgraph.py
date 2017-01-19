@@ -412,7 +412,6 @@ def symbolic_gradient(f):
 
 def applies_to(*klasses):
     """Decorates functions to match specific nodes only in rule based expression simplification."""
-
     def wrapper(func):
         def wrapped_func(node):
             if isinstance(node, klasses):
@@ -471,7 +470,6 @@ simplification_rules = [
 
 def simplify(node):
     """Returns a simplified version of the expression tree associated with `node`."""
-
     nodemap = {}
     for n in postorder(node):
         if isinstance(n, Symbol):
