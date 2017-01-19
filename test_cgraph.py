@@ -58,13 +58,6 @@ def test_mul():
     f = x * y
     checkf(f, {x:2, y:3}, value=6, ngrad={x: 3, y:2})
 
-def test_sqr():
-    x = cg.Symbol('x')
-    y = cg.Symbol('y')
-
-    f = cg.sym_sqr(x * 2 + y)
-    checkf(f, {x:2, y:3}, value=7**2, ngrad={x: 2*7*2, y:2*7*1})
-
 def test_div():
     x = cg.Symbol('x')
     y = cg.Symbol('y')
@@ -94,6 +87,9 @@ def test_pow():
     d = cg.symbolic_gradient(f)
     checkf(d[x], {x:2, y:3}, value=12, ngrad={x: 12, y:4+math.log(4096)})                                      # ddf/dxdx and ddf/dxdy
     checkf(d[y], {x:2, y:3}, value=math.log(256), ngrad={x:4+math.log(4096), y:8 * math.log(2) * math.log(2)}) # ddf/dydx and ddf/dydy
+
+    f = (x * 2 + y)**2
+    checkf(f, {x:2, y:3}, value=7**2, ngrad={x: 2*7*2, y:2*7*1})
 
 def test_reuse_of_expr():
     x = cg.Symbol('x')
