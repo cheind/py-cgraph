@@ -17,6 +17,7 @@ Christoph Heindl, 2017
 """
 
 from collections import defaultdict
+from collections import Iterable
 from numbers import Number
 import copy
 import math
@@ -127,6 +128,25 @@ class Add(Node):
     
     def symbolic_gradient(self):
         return [Constant(1), Constant(1)]
+
+class Sum(Node):
+    """N-ary summation of nodes on a single level."""
+
+    def __init__(self, n):
+        assert n > 0, "Sum requires at least one child node"
+        super(Sum, self).__init__(nary=n)
+
+    def __str__(self):
+        return 'sum({})'.format(', '.join(self.children))        
+
+    def compute_value(self, values):
+        return sum([values[c] for c in self.children])
+    
+    def compute_gradient(self, values):
+        return [1]*len(self.children)
+    
+    def symbolic_gradient(self):
+        return [Constant(1)]*len(self.children)
 
 class Sub(Node):
     """Binary subtraction of two nodes."""
@@ -256,16 +276,19 @@ class Pow(Node):
             self.children[1] * self.children[0] ** (self.children[1]-1),
             self * sym_log(self.children[0])
         ]
-        
+
+def wrap_number(n):
+    """Wraps a plain number as Constant object."""
+    if isinstance(n, Number):
+        n = Constant(n)
+    return n    
 
 def wrap_args(func):
     """Decorator that turns plain number arguments into Constant objects."""
     def wrapped(*args, **kwargs):
         new_args = []
         for a in args:
-            if isinstance(a, Number):
-                a = Constant(a)
-            new_args.append(a)
+            new_args.append(wrap_number(a))
         return func(*new_args, **kwargs)
     return wrapped
         
@@ -326,15 +349,20 @@ def sym_pow(x, y):
 def sym_sum(x):
     """
     Returns a new node that represents the sum over all elements in `x`.
-    Currently this is accomplished by a series of binary additions. One might
-    however also consider a more efficient implementation using a new n-ary Sum node.
+
+    Instead of using a sequence binary `Add` that would generate very deep expression tree
+    for large number of elements, we use the more efficient `Sum` that is capable of
+    doing the same with a single node.
     """
+    if not isinstance(x, Iterable):
+        raise ValueError('Not iterable')
+
     if len(x) == 0:
-        return Constant(0)   
-    
-    n = x[0]
-    for idx in range(1, len(x)):
-        n = n + x[idx]
+        return Constant(0) 
+
+    n = Sum(n=len(x))
+    for idx, e in enumerate(x):
+        n.children[idx] = wrap_number(e)
     return n
 
 def postorder(node):

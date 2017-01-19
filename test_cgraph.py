@@ -91,6 +91,13 @@ def test_pow():
     f = (x * 2 + y)**2
     checkf(f, {x:2, y:3}, value=7**2, ngrad={x: 2*7*2, y:2*7*1})
 
+def test_sum():
+    x = cg.Symbol('x')
+    y = cg.Symbol('y')
+
+    f = cg.sym_sum([x, y, x, y])
+    checkf(f, {x:2, y:3}, value=10, ngrad={x: 2, y:2})
+
 def test_reuse_of_expr():
     x = cg.Symbol('x')
     y = cg.Symbol('y')

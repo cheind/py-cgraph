@@ -23,7 +23,7 @@ def sum_residuals_squared(w, xy):
     residuals = []
     for i in range(n):
         r = w[0] * xy[0,i] + w[1] - xy[1,i]
-        residuals.append(cg.sym_sqr(r))
+        residuals.append(r**2)
 
     return cg.sym_sum(residuals) / n
 
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     d = 2.0
 
     # Noisy line samples
-    samples = generate_points(20, k, d)
+    samples = generate_points(40, k, d)
     
     # The parameters we optimize for
     w = [
