@@ -137,7 +137,7 @@ class Sum(Node):
         super(Sum, self).__init__(nary=n)
 
     def __str__(self):
-        return 'sum({})'.format(', '.join(self.children))        
+        return '({})'.format(' + '.join([str(c) for c in self.children]))        
 
     def compute_value(self, values):
         return sum([values[c] for c in self.children])
