@@ -98,6 +98,12 @@ def test_sum():
     f = cg.sym_sum([x, y, x, y])
     checkf(f, {x:2, y:3}, value=10, ngrad={x: 2, y:2})
 
+def test_sqrt():
+    x = cg.Symbol('x')
+    
+    f = cg.sym_sqrt(x)
+    checkf(f, {x:4}, value=2, ngrad={x: 0.25})
+
 def test_reuse_of_expr():
     x = cg.Symbol('x')
     y = cg.Symbol('y')
