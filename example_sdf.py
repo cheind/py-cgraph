@@ -25,8 +25,10 @@ def eval_sdf():
 # http://stackoverflow.com/questions/25342072/computing-and-drawing-vector-fields
 r = eval_sdf()
 fig, ax = plt.subplots()
-norm = clr.Normalize(vmin = np.min(r), vmax = np.max(r), clip = False)
-ax.imshow(r, extent=[ex.min(), ex.max(), ey.min(), ey.max()], cmap='spectral', norm=norm)
+#norm = clr.Normalize(vmin = np.min(r), vmax = np.max(r), clip = False)
+#ax.imshow(r, extent=[ex.min(), ex.max(), ey.min(), ey.max()], cmap='spectral', norm=norm)
+cont = ax.contour(ex, ey, r)
+plt.clabel(cont, inline=1, fontsize=10)
 plt.show()
 
 
