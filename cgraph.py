@@ -277,6 +277,52 @@ class Pow(Node):
             self * sym_log(self.children[0])
         ]
 
+class Sqrt(Node):
+    """Square root of `x`."""
+
+    def __init__(self):
+        super(Sqrt, self).__init__(nary=1)
+
+    def __str__(self):
+        return 'sqrt({})'.format(str(self.children[0]))
+
+    def compute_value(self, values):
+        return nan_on_fail(lambda: math.sqrt(values[self.children[0]]))
+
+    def compute_gradient(self, values):
+        return [
+            nan_on_fail(lambda: 1. / (2 * values[self]))
+        ]
+
+    def symbolic_gradient(self):
+        return [
+            Constant(1) / (Constant(2) * self)
+        ]
+
+class Min(Node):
+    """Minimum `min(x, y)`."""
+
+    def __init__(self):
+        super(Min, self).__init__(nary=2)
+
+    def __str__(self):
+        return 'min({},{})'.format(str(self.children[0]), str(self.children[0]))
+
+    def compute_value(self, values):
+        return min(values[self.children[0]], values[self.children[1]])
+
+    def compute_gradient(self, values):
+        if values[self.children[0]] <= values[self.children[1]]:
+            return [1, 0]
+        else:
+            return [0, 1]
+
+    def symbolic_gradient(self):
+        pass
+        #return [
+        #    Constant(1) / (Constant(2) * self)
+        #]
+
 def wrap_number(n):
     """Wraps a plain number as Constant object."""
     if isinstance(n, Number):
@@ -294,7 +340,7 @@ def wrap_args(func):
         
 @wrap_args
 def sym_add(x, y):
-    """Returns a new node that represents of `x+y`."""
+    """Returns a new node that represents `x+y`."""
     n = Add()
     n.children[0] = x
     n.children[1] = y
@@ -302,7 +348,7 @@ def sym_add(x, y):
 
 @wrap_args
 def sym_sub(x, y):
-    """Returns a new node that represents of `x-y`."""
+    """Returns a new node that represents `x-y`."""
     n = Sub()
     n.children[0] = x
     n.children[1] = y
@@ -310,7 +356,7 @@ def sym_sub(x, y):
 
 @wrap_args
 def sym_mul(x, y):
-    """Returns a new node that represents of `x*y`."""
+    """Returns a new node that represents `x*y`."""
     n = Mul()
     n.children[0] = x
     n.children[1] = y
@@ -318,7 +364,7 @@ def sym_mul(x, y):
 
 @wrap_args
 def sym_div(x, y):
-    """Returns a new node that represents of `x/y`."""
+    """Returns a new node that represents `x/y`."""
     n = Div()
     n.children[0] = x
     n.children[1] = y
@@ -326,22 +372,37 @@ def sym_div(x, y):
 
 @wrap_args
 def sym_log(x):
-    """Returns a new node that represents of `ln(x)`."""
+    """Returns a new node that represents `ln(x)`."""
     n = Logartihm()
     n.children[0] = x
     return n
 
 @wrap_args
 def sym_neg(x):
-    """Returns a new node that represents of `-x`."""
+    """Returns a new node that represents `-x`."""
     n = Neg()
     n.children[0] = x
     return n
 
 @wrap_args
 def sym_pow(x, y):
-    """Returns a new node that represents of `x**y`."""
+    """Returns a new node that represents `x**y`."""
     n = Pow()
+    n.children[0] = x
+    n.children[1] = y
+    return n
+
+@wrap_args
+def sym_sqrt(x):
+    """Returns a new node that represents `sqrt(x)`."""
+    n = Sqrt()
+    n.children[0] = x
+    return n
+
+@wrap_args
+def sym_min(x,y):
+    """Returns a new node that represents `min(x,y)`."""
+    n = Min()
     n.children[0] = x
     n.children[1] = y
     return n
