@@ -61,6 +61,15 @@ class Node:
     def __pow__(self, other):
         return sym_pow(self, other)
 
+    def compute_value(self, values):
+        raise NotImplementedError()
+
+    def compute_gradient(self, vals):
+        raise NotImplementedError()
+
+    def symbolic_gradient(self):
+        raise NotImplementedError()
+
 class Symbol(Node):
     """
     Represents a terminal node that might be associated with a scalar value.    
