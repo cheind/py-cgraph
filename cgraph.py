@@ -306,31 +306,7 @@ class Sqrt(Node):
     def symbolic_gradient(self):
         return [
             Constant(1) / (Constant(2) * self)
-        ]
-
-class Min(Node):
-    """Minimum `min(x, y)`."""
-
-    def __init__(self):
-        super(Min, self).__init__(nary=2)
-
-    def __str__(self):
-        return 'min({},{})'.format(str(self.children[0]), str(self.children[0]))
-
-    def compute_value(self, values):
-        return min(values[self.children[0]], values[self.children[1]])
-
-    def compute_gradient(self, values):
-        if values[self.children[0]] <= values[self.children[1]]:
-            return [1, 0]
-        else:
-            return [0, 1]
-
-    def symbolic_gradient(self):
-        pass
-        #return [
-        #    Constant(1) / (Constant(2) * self)
-        #]
+        ]  
 
 def wrap_number(n):
     """Wraps a plain number as Constant object."""
@@ -406,14 +382,6 @@ def sym_sqrt(x):
     """Returns a new node that represents `sqrt(x)`."""
     n = Sqrt()
     n.children[0] = x
-    return n
-
-@wrap_args
-def sym_min(x,y):
-    """Returns a new node that represents `min(x,y)`."""
-    n = Min()
-    n.children[0] = x
-    n.children[1] = y
     return n
 
 def sym_sum(x):

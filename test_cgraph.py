@@ -5,7 +5,7 @@ from pytest import approx
 
 import cgraph as cg
 
-def checkf(f, fargs, value=None, ngrad=None):
+def checkf(f, fargs, value=None, ngrad=None, with_sgrad=True):
     __tracebackhide__ = True
    
     v = cg.value(f, fargs)
@@ -14,21 +14,24 @@ def checkf(f, fargs, value=None, ngrad=None):
         f: {}
         expected value of {} - received {}""".format(f, value, v))
 
-    ng = cg.numeric_gradient(f, fargs)
-    sg = cg.symbolic_gradient(f)
+    if ngrad is not None:
+        ng = cg.numeric_gradient(f, fargs)    
+        for k in fargs.keys():
+            if ngrad[k] != approx(ng[k]):
+                pytest.fail("""Function NUMERIC GRAD check failed
+                f: {}, 
+                df/d{}
+                expected value of {} - received {}""".format(f, k, ngrad[k], ng[k]))
 
-    for k in fargs.keys():
-        if ngrad[k] != approx(ng[k]):
-            pytest.fail("""Function NUMERIC GRAD check failed
-            f: {}, 
-            df/d{}
-            expected value of {} - received {}""".format(f, k, ngrad[k], ng[k]))
-
-        if ngrad[k] != approx(cg.value(sg[k], fargs)):
-            pytest.fail("""Function SYMBOLIC GRAD check failed
-            f: {}, 
-            df/d{}: {},
-            expected value of {} - received {}""".format(f, k, sg[k], ngrad[k], cg.value(sg[k], fargs)))
+    if ngrad is not None and with_sgrad:
+        ng = cg.numeric_gradient(f, fargs)
+        sg = cg.symbolic_gradient(f) 
+        for k in fargs.keys():
+            if ngrad[k] != approx(cg.value(sg[k], fargs)):
+                pytest.fail("""Function SYMBOLIC GRAD check failed
+                f: {}, 
+                df/d{}: {},
+                expected value of {} - received {}""".format(f, k, sg[k], ngrad[k], cg.value(sg[k], fargs)))
 
 def complexity(f):
     count = 0
