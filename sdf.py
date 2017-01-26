@@ -1,4 +1,5 @@
 import cgraph as cg
+  
 
 class Min(cg.Node):
     """Minimum of multiple elements `min(x, y, z, ...)`."""

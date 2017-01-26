@@ -9,10 +9,17 @@ import matplotlib.colors as clr
 x = cg.Symbol('x')
 y = cg.Symbol('y')
 
+# Support set ops?
+# http://www.linuxtopia.org/online_books/programming_books/python_programming/python_ch16s03.html
+
+"""
 f = sdf.union(
     sdf.circle(x, y),
     sdf.circle(x, y, cx=0.6),
     sdf.circle(x, y, cx=-0.6, cy=-0.2, r=0.5))
+"""
+
+f = sdf.circle(x, y) | sdf.circle(x, y, cx=0.6) | sdf.circle(x, y, cx=-0.6, cy=-0.2, r=0.5)
 
 ex, ey = np.mgrid[-2:2:100j, -2:2:100j]
 
