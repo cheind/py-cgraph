@@ -21,7 +21,8 @@ def test_circle():
 def test_union():
     x = cg.Symbol('x')
     y = cg.Symbol('y')
+    z = cg.Symbol('z')
 
-    f = sdf.union(x, y)
-    checkf(f, {x:2, y:1}, value=1., ngrad={x:0, y:1}, with_sgrad=False)
+    f = sdf.union(x, y, z)
+    checkf(f, {x:2, y:1, z:-1}, value=-1, ngrad={x:0, y:0, z:1}, with_sgrad=False)
 

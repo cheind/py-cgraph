@@ -9,9 +9,10 @@ import matplotlib.colors as clr
 x = cg.Symbol('x')
 y = cg.Symbol('y')
 
-c0 = sdf.circle(x, y)
-c1 = sdf.circle(x, y, cx=0.6)
-f = sdf.union(c0, c1)
+f = sdf.union(
+    sdf.circle(x, y),
+    sdf.circle(x, y, cx=0.6),
+    sdf.circle(x, y, cx=-0.6, cy=-0.2, r=0.5))
 
 ex, ey = np.mgrid[-2:2:100j, -2:2:100j]
 
