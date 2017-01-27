@@ -447,7 +447,7 @@ def value(f, fargs):
     """Shortcut for `values(f, fargs)[f]`."""
     return values(f, fargs)[f]
     
-def numeric_gradient(f, fargs):
+def numeric_gradient(f, fargs, with_gradient=False):
     """Computes the numerical partial derivatives of `f` with respect to all nodes using backpropagation."""
     vals = values(f, fargs)
     derivatives = defaultdict(lambda: 0)
@@ -460,8 +460,10 @@ def numeric_gradient(f, fargs):
             local_grad = n.compute_gradient(vals)
             n, in_grad = gen.send([l*in_grad for l in local_grad])
     except StopIteration:
-        return derivatives
-
+        if with_gradient:
+            return derivatives, vals
+        else:
+            return derivatives
 
 def symbolic_gradient(f):
     """Computes the symbolic partial derivatives of `f` with respect to all nodes using backpropagation."""
