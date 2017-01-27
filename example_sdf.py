@@ -56,8 +56,20 @@ r, g = k(X.reshape(-1, 1), Y.reshape(-1, 1), with_gradient=True)
 
 
 fig, ax = plt.subplots()
-img = ax.imshow(r.reshape(X.shape).transpose(), cmap='spectral', extent=[X.min(), X.max(), Y.min(), Y.max()], origin='lower')
-cont = ax.contour(X, Y, r.reshape(X.shape))
+
+shape = X.shape
+v = r.reshape(shape)
+dx = g[:,0].reshape(shape)
+dy = g[:,1].reshape(shape)
+
+# quiver
+skip = (slice(None, None, 5), slice(None, None, 5))
+ax.quiver(X[skip], Y[skip], dx[skip], dy[skip])
+# or colored
+# ax.quiver(X[skip], Y[skip], dx[skip], dy[skip], v[skip])
+
+img = ax.imshow(v.transpose(), cmap='spectral', extent=[X.min(), X.max(), Y.min(), Y.max()], origin='lower')
+cont = ax.contour(X, Y, v)
 ax.set_aspect('equal')
 plt.clabel(cont, inline=1, fontsize=10)
 plt.show()
