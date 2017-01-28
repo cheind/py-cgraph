@@ -88,10 +88,8 @@ def animate(i):
     dafter, g = k(sx[:,0], sx[:,1], with_gradient=True)
     n = g / np.linalg.norm(g, axis=1)[:,np.newaxis]
 
-    sbefore = np.sign(dbefore)
     safter = np.sign(dafter)
-    cmask = safter <= 0
-    cids = np.where(cmask)[0]
+    cids = np.where(safter <= 0)[0]
 
     if len(cids) > 0:
         cr = 0.7
