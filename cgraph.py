@@ -286,6 +286,24 @@ class Pow(Node):
             self * sym_log(self.children[0])
         ]
 
+class Exp(Node):
+    """Base-e exponential function of x `e**x`."""
+
+    def __init__(self):
+        super(Exp, self).__init__(nary=1)
+
+    def __str__(self):
+        return 'exp({})'.format(str(self.children[0]))
+
+    def compute_value(self, values):
+        return math.exp(values[self.children[0]])
+
+    def compute_gradient(self, values):
+        return [values[self]]
+        
+    def symbolic_gradient(self):
+        return [self]
+
 class Sqrt(Node):
     """Square root of `x`."""
 
@@ -376,6 +394,14 @@ def sym_pow(x, y):
     n.children[0] = x
     n.children[1] = y
     return n
+
+@wrap_args
+def sym_exp(x):
+    """Returns a new node that represents `e**x`."""
+    n = Exp()
+    n.children[0] = x
+    return n
+    
 
 @wrap_args
 def sym_sqrt(x):
