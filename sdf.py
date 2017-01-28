@@ -3,33 +3,36 @@ import numpy as np
   
 
 class Min(cg.Node):
-    """Minimum of multiple elements `min(x, y, z, ...)`."""
+    """Minimum of two expressions `min(x, y)`."""
 
-    def __init__(self, nary):
-        super(Min, self).__init__(nary=nary)
+    def __init__(self):
+        super(Min, self).__init__(nary=2)
 
     def __str__(self):
-        return 'min({})'.format(','.join([str(c) for c in self.children]))
+        return 'min({},{})'.format(str(self.children[0]), str(self.children[1]))
 
     def compute_value(self, values):
-        return min([values[c] for c in self.children])
+        return min(values[self.children[0]], values[self.children[1]])
 
     def compute_gradient(self, values):
-        vals = [values[c] for c in self.children]
-        val, idx = min((val, idx) for (idx, val) in enumerate(vals))
-
-        g = [0]*len(vals)
-        g[idx] = 1.
-        
-        return g
+        if values[self.children[0]] <= values[self.children[1]]:
+            return [1, 0]
+        else:
+            return [0, 1]
 
 @cg.wrap_args
-def sym_min(*args):
-    """Returns a new node that represents `min(x,y,z,...)`."""
-    n = Min(nary=len(args))
-    for i, a in enumerate(args):
-        n.children[i] = a
+def sym_min(a, b):
+    """Returns a new node that represents `min(x,y)`."""
+    n = Min()
+    n.children[0] = a
+    n.children[1] = b
     return n
+
+@cg.wrap_args
+def sym_smin(a, b, k=32):
+    # http://www.iquilezles.org/www/articles/smin/smin.htm
+    r = cg.sym_exp(-k * a) + cg.sym_exp(-k * b)
+    return -cg.sym_log(r) / k
 
 @cg.wrap_args
 def circle(x, y, cx=0., cy=0., r=1.):
@@ -43,9 +46,14 @@ def line(x, y, nx=1., ny=0., d=0):
     return nx * x + ny * y - d
 
 @cg.wrap_args
-def union(*args):
-    """Return union of multiple signed distance functions."""
-    return sym_min(*args)
+def union(a, b):
+    """Return union of two signed distance functions."""
+    return sym_min(a, b)
+
+@cg.wrap_args
+def sunion(a, b, k=5):
+    """Return smooth union of two signed distance functions."""
+    return sym_smin(a, b, k=k)
 
 
 cg.Node.__or__ = lambda self, other: union(self, other)
