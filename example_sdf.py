@@ -12,7 +12,7 @@ sy = cg.Symbol('y')
 #f = sdf.circle(sx, sy) | \
 #    sdf.circle(sx, sy, cx=0.8) | \
 #    sdf.circle(sx, sy, cx=-0.6, cy=-0.2, r=0.7)
-f = sdf.line(sx, sy, nx=0, ny=1, d=-1.8) | sdf.line(sx, sy, nx=1, ny=0, d=-1.8) | sdf.line(sx, sy, nx=-1, ny=0, d=-1.8) | sdf.circle(sx, sy, cx=0, cy=-1.8, r=0.5)
+f = sdf.line(sx, sy, n=[0, 1], d=-1.8) | sdf.line(sx, sy, n=[1, 1], d=-1.8) | sdf.line(sx, sy, n=[-1, 1], d=-1.8) | sdf.circle(sx, sy, c=[0, -0.8], r=0.5)
 k = sdf.Function(f, [sx, sy])
 
 
@@ -51,7 +51,7 @@ class Particles:
         return sx + dx * h, sv + dv * h
 
 
-n=40
+n=20
 p = Particles(n)
 p.x = np.random.multivariate_normal([0, 1], [[0.1, 0],[0, 0.1]], n)
 p.v = np.random.multivariate_normal([0, 0], [[0.1, 0],[0, 0.1]], n)
@@ -68,7 +68,7 @@ fig, ax = plt.subplots()
 ax.set_xlim((-2, 2))
 ax.set_ylim((-2, 2))
 ax.set_aspect('equal')
-cont = ax.contour(X, Y, v)
+cont = ax.contour(X, Y, v, levels=[0])
 skip = (slice(None, None, 5), slice(None, None, 5))
 ax.quiver(X[skip], Y[skip], dx[skip], dy[skip])
 
@@ -88,14 +88,13 @@ def animate(i):
     dafter, g = k(sx[:,0], sx[:,1], with_gradient=True)
     n = g / np.linalg.norm(g, axis=1)[:,np.newaxis]
 
-    safter = np.sign(dafter)
-    cids = np.where(safter <= 0)[0]
+    cids = np.where(dafter <= 0)[0]
 
     if len(cids) > 0:
         cr = 0.7
-        cf = 0.1
+        cf = 0.2
         # Update pos
-        sx[cids, :] = sx[cids, :] - (1-cr) * dafter[cids, np.newaxis] * n[cids, :]
+        sx[cids, :] = sx[cids, :] - (1+cr) * dafter[cids, np.newaxis] * n[cids, :]
         # Update velocity
         vn = np.sum(sv[cids, :] * n[cids, :], axis=1)[:,np.newaxis] * n[cids, :]
         vt = sv[cids, :] - vn
