@@ -35,15 +35,16 @@ def sym_smin(a, b, k=32):
     return -cg.sym_log(r) / k
 
 @cg.wrap_args
-def circle(x, y, cx=0., cy=0., r=1.):
+def circle(x, y, c=np.array([0,0]), r=1.):
     """Return the signed distance function for a circle."""
-    return cg.sym_sqrt((cx - x)**2 + (cy - y)**2) - r
+    return cg.sym_sqrt((c[0] - x)**2 + (c[1] - y)**2) - r
 
 
 @cg.wrap_args
-def line(x, y, nx=1., ny=0., d=0):
+def line(x, y, n=np.array([1,0]), d=0):    
     """Return the signed distance function for a line."""
-    return nx * x + ny * y - d
+    n /= np.linalg.norm(n)
+    return n[0] * x + n[1] * y - d
 
 @cg.wrap_args
 def union(a, b):
