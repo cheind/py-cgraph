@@ -9,33 +9,53 @@ from matplotlib import animation
 sx = cg.Symbol('x')
 sy = cg.Symbol('y')
 
-f = sdf.circle(sx, sy) | \
-    sdf.circle(sx, sy, cx=0.8) | \
-    sdf.circle(sx, sy, cx=-0.6, cy=-0.2, r=0.7)
+#f = sdf.circle(sx, sy) | \
+#    sdf.circle(sx, sy, cx=0.8) | \
+#    sdf.circle(sx, sy, cx=-0.6, cy=-0.2, r=0.7)
+f = sdf.line(sx, sy, nx=0, ny=1, d=-1.8) | sdf.line(sx, sy, nx=1, ny=0, d=-1.8) | sdf.line(sx, sy, nx=-1, ny=0, d=-1.8) | sdf.circle(sx, sy, cx=0, cy=-1.8, r=0.5)
 k = sdf.Function(f, [sx, sy])
 
 
-s = np.array([
-    [0.0, 2.0], # pos
-    [0.1, 0.0], # vel
-])
-n = int(s.shape[0] / 2)
-m = np.ones(n)
+class Particles:
 
-def forces(s, t):
-    f = np.zeros((n, 2))
-    f[:, 1] = m * -1.    
-    return f
+    def __init__(self, n):
+        self.n = n
+        self.x = np.zeros((n, 2))
+        self.v = np.zeros((n, 2))
+        self.m = np.ones(n)
+        self.f = np.zeros((n, 2))
+        self.dx = np.zeros((n, 2))
+        self.dv = np.zeros((n, 2))
 
-def dynamics(s, t):
-    d = np.empty(s.shape)
-    d[:n,:] = s[n:,:] # dx/dt = v
-    d[n:,:] = forces(s, t) / m
-    return d
+        self.actors = [plt.Circle((0,0), radius=0.08) for i in range(n)]
+
+    def update_forces(self, t):
+        self.f.fill(0.)
+        self.f[:, 1] = self.m * -1. 
+        return self.f
+
+    def update_dynamics(self, t):
+        self.dx[:] = self.v
+        self.dv[:] = self.update_forces(t) / self.m[:, np.newaxis]
+        return self.dx, self.dv
+
+    def update_state(self, sx, sv):
+        self.x[:] = sx
+        self.v[:] = sv
+
+        for i, a in enumerate(self.actors):
+            a.center = self.x[i,:]
+
+    @staticmethod
+    def integrate_euler(sx, sv, dx, dv, h):
+        return sx + dx * h, sv + dv * h
 
 
-def update(s, d, h):
-    return s + d * h
+n=40
+p = Particles(n)
+p.x = np.random.multivariate_normal([0, 1], [[0.1, 0],[0, 0.1]], n)
+p.v = np.random.multivariate_normal([0, 0], [[0.1, 0],[0, 0.1]], n)
+
 
 X, Y = np.mgrid[-2:2:100j, -2:2:100j]
 r, g = k(X.reshape(-1, 1), Y.reshape(-1, 1), with_gradient=True)
@@ -44,30 +64,53 @@ v = r.reshape(shape)
 dx = g[:,0].reshape(shape)
 dy = g[:,1].reshape(shape)
 
-c = plt.Circle((0, 0), 0.2)
 fig, ax = plt.subplots()
 ax.set_xlim((-2, 2))
 ax.set_ylim((-2, 2))
 ax.set_aspect('equal')
-ax.add_patch(c)
 cont = ax.contour(X, Y, v)
+skip = (slice(None, None, 5), slice(None, None, 5))
+ax.quiver(X[skip], Y[skip], dx[skip], dy[skip])
 
-def init():
-    c.center = s[0,:]
-    return c,
+def init():    
+    for c in p.actors:
+        ax.add_patch(c)
 
+    return p.actors
+    
 h = 0.02
 def animate(i):
-    d = dynamics(s, 0)
-    snew = update(s, d, h)
-    s[:] = snew
-    c.center = s[0,:]
-    return c,    
 
-anim = animation.FuncAnimation(fig, animate, 
-                               init_func=init, 
-                               frames=360, 
-                               interval=20,
+    dbefore = k(p.x[:,0], p.x[:,1])
+    dx, dv = p.update_dynamics(0)
+    sx, sv = Particles.integrate_euler(p.x, p.v, dx, dv, h)
+
+    dafter, g = k(sx[:,0], sx[:,1], with_gradient=True)
+    n = g / np.linalg.norm(g, axis=1)[:,np.newaxis]
+
+    sbefore = np.sign(dbefore)
+    safter = np.sign(dafter)
+    cmask = safter <= 0
+    cids = np.where(cmask)[0]
+
+    if len(cids) > 0:
+        cr = 0.7
+        cf = 0.1
+        # Update pos
+        sx[cids, :] = sx[cids, :] - (1-cr) * dafter[cids, np.newaxis] * n[cids, :]
+        # Update velocity
+        vn = np.sum(sv[cids, :] * n[cids, :], axis=1)[:,np.newaxis] * n[cids, :]
+        vt = sv[cids, :] - vn
+        sv[cids, :] = -cr * vn + (1 - cf)*vt
+    
+    p.update_state(sx, sv)
+    return p.actors
+
+anim = animation.FuncAnimation(fig, animate,  
+                               frames=2000, 
+                               interval=10,
+                               init_func=init,
+                               repeat=False,
                                blit=True)
 plt.show()
 
