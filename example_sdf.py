@@ -9,10 +9,10 @@ from matplotlib import animation
 sx = cg.Symbol('x')
 sy = cg.Symbol('y')
 
-f = sdf.line(sx, sy, n=[0, 1], d=-1.8) | sdf.line(sx, sy, n=[1, 1], d=-1.8) | sdf.line(sx, sy, n=[-1, 1], d=-1.8) | sdf.circle(sx, sy, c=[0, -0.8], r=0.5)
+f = sdf.line(sx, sy, n=[0, 1], d=-1.8) | sdf.line(sx, sy, n=[1, 1], d=-1.8) | sdf.line(sx, sy, n=[-1, 1], d=-1.8) | (sdf.subtract(sdf.circle(sx, sy, c=[0, -0.8], r=0.5), sdf.circle(sx, sy, c=[0, -0.5], r=0.5)))
 k = sdf.Function(f, [sx, sy])
 
-n = 20
+n = 60
 stype = np.dtype([('x', float, 2), ('v', float, 2)])
 p = np.zeros(n, dtype=[
     ('s', stype), 
@@ -23,7 +23,7 @@ p = np.zeros(n, dtype=[
     ('cf', float)
 ])
 
-p['s']['x'] = np.random.multivariate_normal([0, 1], [[0.1, 0],[0, 0.1]], n)
+p['s']['x'] = np.random.multivariate_normal([0, 1], [[0.05, 0],[0, 0.05]], n)
 p['s']['v'] = np.random.multivariate_normal([0, 0], [[0.1, 0],[0, 0.1]], n)
 p['m'] = np.random.uniform(1, 10, size=n)
 p['cr'] = 0.7
@@ -75,6 +75,8 @@ class ParticleSimulation:
         dbefore = self.sdworld(x[:, 0], x[:, 1])
         dafter, g = self.sdworld(xnew[:,0], xnew[:,1], with_gradient=True)
 
+        dafter -= p['r'] # Correct for radius
+
         cids = np.where(dafter <= 0)[0]
         if len(cids) > 0:
             # Collision response for items in collision          
@@ -112,6 +114,7 @@ dy = g[:,1].reshape(shape)
 
 
 cont = ax.contour(X, Y, v, levels=[0])
+#cont = ax.contour(X, Y, v)
 skip = (slice(None, None, 5), slice(None, None, 5))
 ax.quiver(X[skip], Y[skip], dx[skip], dy[skip], v)
 
@@ -128,7 +131,7 @@ def animate(i):
     return actors
 
 anim = animation.FuncAnimation(fig, animate,  
-                               frames=2000, 
+                               frames=1000, 
                                interval=10,
                                repeat=False,
                                blit=True)
