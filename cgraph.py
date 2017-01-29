@@ -22,6 +22,8 @@ from numbers import Number
 import copy
 import math
 
+import numpy as np
+
 class Node:
     """A base class for operations, symbols and constants in an expression tree."""
 
@@ -60,15 +62,23 @@ class Node:
 
     def __pow__(self, other):
         return sym_pow(self, other)
+    
+    def __getitem__(self, key):
+        return self.children[key]
 
-    def compute_value(self, values):
+    def compute_value(self, cv):
+        """Return the node's value computed from the values of children given as array in `cv`."""
         raise NotImplementedError()
 
-    def compute_gradient(self, vals):
+    def compute_gradient(self, cv, value):
+        """Return the node's numeric gradient evaluated."""
         raise NotImplementedError()
 
     def symbolic_gradient(self):
         raise NotImplementedError()
+
+    def child_values(self, values):
+        return [values[c] for c in self.children]  
 
 class Symbol(Node):
     """
@@ -92,11 +102,8 @@ class Symbol(Node):
         else:
             return False
 
-    def compute_value(self, values):
-        return values[self]
-
-    def compute_gradient(self, values):
-        return []
+    def compute_gradient(self, cv, v):
+        return np.ones(1)
 
     def symbolic_gradient(self):
         return []
@@ -106,7 +113,7 @@ class Constant(Node):
 
     def __init__(self, value):
         super(Constant, self).__init__(nary=0)
-        self.value = value
+        self.value = np.atleast_1d(value)
 
     def __str__(self):
         return str(self.value)
@@ -114,8 +121,8 @@ class Constant(Node):
     def compute_value(self, values):
         return self.value
 
-    def compute_gradient(self, values):
-        return []
+    def compute_gradient(self, cv, value):
+        return np.ones(1)
 
     def symbolic_gradient(self):
         return []
@@ -127,13 +134,13 @@ class Add(Node):
         super(Add, self).__init__(nary=2)
 
     def __str__(self):
-        return '({} + {})'.format(str(self.children[0]), str(self.children[1]))
+        return '({} + {})'.format(str(self[0]), str(self[1]))
 
-    def compute_value(self, values):
-        return values[self.children[0]] + values[self.children[1]]
+    def compute_value(self, v):
+        return v[0] + v[1]
     
-    def compute_gradient(self, values):
-        return [1, 1]
+    def compute_gradient(self, cv, value):
+        return np.ones((2,) +  cv[0].shape)
     
     def symbolic_gradient(self):
         return [Constant(1), Constant(1)]
@@ -148,11 +155,11 @@ class Sum(Node):
     def __str__(self):
         return '({})'.format(' + '.join([str(c) for c in self.children]))        
 
-    def compute_value(self, values):
-        return sum([values[c] for c in self.children])
+    def compute_value(self, v):
+        return np.sum(v)
     
-    def compute_gradient(self, values):
-        return [1]*len(self.children)
+    def compute_gradient(self, cv, value):
+        return np.ones((len(cv),) + cv[0].shape)
     
     def symbolic_gradient(self):
         return [Constant(1)]*len(self.children)
@@ -164,13 +171,15 @@ class Sub(Node):
         super(Sub, self).__init__(nary=2)
 
     def __str__(self):
-        return '({} - {})'.format(str(self.children[0]), str(self.children[1]))
+        return '({} - {})'.format(str(self[0]), str(self[1]))
 
-    def compute_value(self, values):
-        return values[self.children[0]] - values[self.children[1]]
+    def compute_value(self, v):
+        return v[0] - v[1]
     
-    def compute_gradient(self, values):
-        return [1, -1]
+    def compute_gradient(self, cv, value):
+        g = np.ones((2,) +  cv[0].shape)
+        g[1] = -1
+        return g
     
     def symbolic_gradient(self):
         return [Constant(1), Constant(-1)]
@@ -182,23 +191,16 @@ class Mul(Node):
         super(Mul, self).__init__(nary=2)
 
     def __str__(self):
-        return '({}*{})'.format(str(self.children[0]), str(self.children[1]))
+        return '({}*{})'.format(str(self[0]), str(self[1]))
 
-    def compute_value(self, values):
-        return values[self.children[0]] * values[self.children[1]]
+    def compute_value(self, v):
+        return v[0] * v[1]
     
-    def compute_gradient(self, values):
-        return [values[self.children[1]], values[self.children[0]]]
+    def compute_gradient(self, cv, value):
+        return np.vstack((cv[1], cv[0]))
 
     def symbolic_gradient(self):
-        return [self.children[1], self.children[0]]
-
-def nan_on_fail(f):
-    """Catches math exceptions when evaluating `f` and turns them into NAN."""
-    try:
-        return f()
-    except (ArithmeticError, ValueError):
-        return float('nan')
+        return [self[1], self[0]]
 
 class Div(Node):
     """Binary division of two nodes."""
@@ -207,40 +209,40 @@ class Div(Node):
         super(Div, self).__init__(nary=2)
 
     def __str__(self):
-        return '({}/{})'.format(str(self.children[0]), str(self.children[1]))
+        return '({}/{})'.format(str(self[0]), str(self[1]))
 
-    def compute_value(self, values):
-        return nan_on_fail(lambda: values[self.children[0]] / values[self.children[1]])
+    def compute_value(self, v):
+        return v[0] / v[1]
     
-    def compute_gradient(self, values):
-        return [
-            nan_on_fail(lambda: 1. / values[self.children[1]]), 
-            nan_on_fail(lambda: -values[self.children[0]]/ values[self.children[1]]**2)
-        ]
+    def compute_gradient(self, cv, value):
+        return np.vstack((
+            1. / cv[1],
+            -cv[0] / cv[1]**2
+        ))
     
     def symbolic_gradient(self):
         return [
-            Constant(1) / self.children[1],
-            -self.children[0] / self.children[1]**2
+            Constant(1) / self[1],
+            -self[0] / self[1]**2
         ]
 
-class Logartihm(Node):
+class Logarithm(Node):
     """Natural logarithm of a node."""
 
     def __init__(self):
-        super(Logartihm, self).__init__(nary=1)
+        super(Logarithm, self).__init__(nary=1)
 
     def __str__(self):
-        return 'log({})'.format(str(self.children[0]))
+        return 'log({})'.format(str(self[0]))
 
-    def compute_value(self, values):
-        return nan_on_fail(lambda: math.log(values[self.children[0]]))
+    def compute_value(self, v):
+        return np.log(v[0])
 
-    def compute_gradient(self, values):
-        return [nan_on_fail(lambda: 1. / values[self.children[0]])]
+    def compute_gradient(self, cv, value):
+        return (1./ cv[0]).reshape(1,-1)
 
     def symbolic_gradient(self):
-        return [Constant(1) / self.children[0]]
+        return [Constant(1) / self[0]]
 
 
 class Neg(Node):
@@ -250,13 +252,13 @@ class Neg(Node):
         super(Neg, self).__init__(nary=1)
 
     def __str__(self):
-        return '-{}'.format(str(self.children[0]))
+        return '-{}'.format(str(self[0]))
 
-    def compute_value(self, values):
-        return -values[self.children[0]]
+    def compute_value(self, v):
+        return -v[0]
 
-    def compute_gradient(self, values):
-        return [-1]
+    def compute_gradient(self, cv, value):
+        return -np.ones((1,) +  cv[0].shape)
 
     def symbolic_gradient(self):
         return [Constant(-1)]
@@ -269,21 +271,21 @@ class Pow(Node):
         super(Pow, self).__init__(nary=2)
 
     def __str__(self):
-        return '{}**{}'.format(str(self.children[0]), str(self.children[1]))
+        return '{}**{}'.format(str(self[0]), str(self[1]))
 
-    def compute_value(self, values):
-        return values[self.children[0]]**values[self.children[1]]
+    def compute_value(self, v):
+        return v[0]**v[1]
 
-    def compute_gradient(self, values):
-        return [
-            values[self.children[1]] * values[self.children[0]]**(values[self.children[1]]-1),
-            nan_on_fail(lambda: values[self] * math.log(values[self.children[0]]))
-        ]
+    def compute_gradient(self, cv, value):
+        return np.vstack((
+            cv[1] * cv[0]**(cv[1]-1),
+            value * np.log(cv[0])
+        ))
 
     def symbolic_gradient(self):
         return [
-            self.children[1] * self.children[0] ** (self.children[1]-1),
-            self * sym_log(self.children[0])
+            self[1] * self[0] ** (self[1]-1),
+            self * sym_log(self[0])
         ]
 
 class Exp(Node):
@@ -293,13 +295,13 @@ class Exp(Node):
         super(Exp, self).__init__(nary=1)
 
     def __str__(self):
-        return 'exp({})'.format(str(self.children[0]))
+        return 'exp({})'.format(str(self[0]))
 
-    def compute_value(self, values):
-        return math.exp(values[self.children[0]])
+    def compute_value(self, v):
+        return np.exp(v[0])
 
-    def compute_gradient(self, values):
-        return [values[self]]
+    def compute_gradient(self, cv, value):
+        return np.copy(value).reshape(1,-1)
         
     def symbolic_gradient(self):
         return [self]
@@ -311,15 +313,13 @@ class Sqrt(Node):
         super(Sqrt, self).__init__(nary=1)
 
     def __str__(self):
-        return 'sqrt({})'.format(str(self.children[0]))
+        return 'sqrt({})'.format(str(self[0]))
 
-    def compute_value(self, values):
-        return nan_on_fail(lambda: math.sqrt(values[self.children[0]]))
+    def compute_value(self, v):
+        return np.sqrt(v[0])
 
-    def compute_gradient(self, values):
-        return [
-            nan_on_fail(lambda: 1. / (2 * values[self]))
-        ]
+    def compute_gradient(self, cv, value):
+        return (1. / (2 * value)).reshape(1, -1)
 
     def symbolic_gradient(self):
         return [
@@ -376,7 +376,7 @@ def sym_div(x, y):
 @wrap_args
 def sym_log(x):
     """Returns a new node that represents `ln(x)`."""
-    n = Logartihm()
+    n = Logarithm()
     n.children[0] = x
     return n
 
@@ -454,6 +454,12 @@ def bfs(node, node_data):
         node_data = yield t
         for idx, c in enumerate(t[0].children):
             q.append((c, node_data[idx]))
+
+def numpyify(fargs):
+    """Turns each value in the given dict into a numpy array."""
+    tuples = [(k, np.atleast_1d(v)) for k, v in fargs.items()]
+    shape = tuples[0][1].shape if len(tuples) > 0 else (1,)
+    return dict(tuples), shape
             
 def values(f, fargs):
     """
@@ -462,32 +468,44 @@ def values(f, fargs):
     It is assumed by the implementation of this function that missing values
     for Symbols are given in `fargs`.
     """
-    v = {}
+
+    fargs, shape = numpyify(fargs)
+    v = {}    
     v.update(fargs)
+    
     for n in postorder(f):
-        if not n in v:
-            v[n] = n.compute_value(v)
+        if (not n in v) and (not isinstance(n, Symbol)):
+            cvalues = n.child_values(v)
+            value = n.compute_value(cvalues)
+            v[n] = value if value.shape == shape else np.resize(value, shape)
+
     return v
 
 def value(f, fargs):
     """Shortcut for `values(f, fargs)[f]`."""
     return values(f, fargs)[f]
     
-def numeric_gradient(f, fargs, with_gradient=False):
+def numeric_gradient(f, fargs, return_all_values=False, return_value=False):
     """Computes the numerical partial derivatives of `f` with respect to all nodes using backpropagation."""
-    vals = values(f, fargs)
-    derivatives = defaultdict(lambda: 0)
 
-    gen = bfs(f, 1)
+    fargs, shape = numpyify(fargs)
+    
+    vals = values(f, fargs)
+    derivatives = defaultdict(lambda shape=shape: np.zeros(shape))
+    
+    gen = bfs(f, np.ones(shape))
     try:
         n, in_grad = next(gen)
         while True:
             derivatives[n] += in_grad
-            local_grad = n.compute_gradient(vals)
-            n, in_grad = gen.send([l*in_grad for l in local_grad])
+            cvalues = n.child_values(vals)
+            local_grad = n.compute_gradient(cvalues, vals[n])
+            n, in_grad = gen.send(local_grad * in_grad[np.newaxis, :])
     except StopIteration:
-        if with_gradient:
+        if return_all_values:
             return derivatives, vals
+        elif return_value:
+            return derivatives, vals[f]
         else:
             return derivatives
 
@@ -503,6 +521,44 @@ def symbolic_gradient(f):
             n, in_grad = gen.send([l * in_grad for l in local_grad])
     except StopIteration:
         return derivatives
+
+
+
+class Function:
+    """Wraps an expression tree to support function like call syntax.
+    
+    It is often convenient to evaluate an expression tree using positional
+    arguments for symbols. That is instead of `cg.value(f, {x:2, y:3})` one
+    intends to write `f(2,3)`. When computing gradients it is often handy group
+    gradients in a single numpy array instead of having to lookup individual 
+    components in an dictionary. That is, instead of
+
+        g = cg.numeric_gradient(f, {x:[2,3,3], y:[3,4,4]})
+        g[x] # array of three elements representing df/dx for each value
+        g[y] # array of three elements representing df/dy for each value
+
+    With Function you can write
+
+        F = Function(f, [x, y])
+        g, v = F([2,3,3], [3,4,4], compute_gradient=True) # g = gradients, v = function value
+        g.shape # 3x2 array of gradients. One gradient per row.    
+    """
+
+    def __init__(self, f, symbols):
+        self.f = f
+        self.syms = [(i, s) for i, s in enumerate(symbols)]
+
+    def __call__(self, *values, compute_gradient=False):
+
+        fargs = dict([(s, values[si]) for si, s in self.syms])
+        if compute_gradient:
+            g, v = numeric_gradient(self.f, fargs, return_value=True)
+            # Merge gradient directions
+            g = np.hstack([g[s].reshape(-1, 1) for i,s in self.syms])
+            return v, g
+        else:
+            v = value(self.f, fargs)
+            return v
 
 def applies_to(*klasses):
     """Decorates functions to match specific nodes only in rule based expression simplification."""

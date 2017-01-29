@@ -1,15 +1,15 @@
 
 import pytest
 import math
-from pytest import approx
+import numpy as np
 
 import cgraph as cg
 
 def checkf(f, fargs, value=None, ngrad=None, with_sgrad=True):
-    __tracebackhide__ = True
+    #__tracebackhide__ = True
    
     v = cg.value(f, fargs)
-    if value != approx(v):
+    if not all(np.isclose(value, v)):
         pytest.fail("""Function VALUE check failed
         f: {}
         expected value of {} - received {}""".format(f, value, v))
@@ -17,7 +17,7 @@ def checkf(f, fargs, value=None, ngrad=None, with_sgrad=True):
     if ngrad is not None:
         ng = cg.numeric_gradient(f, fargs)    
         for k in fargs.keys():
-            if ngrad[k] != approx(ng[k]):
+            if not all(np.isclose(ngrad[k], ng[k])):
                 pytest.fail("""Function NUMERIC GRAD check failed
                 f: {}, 
                 df/d{}
@@ -27,7 +27,7 @@ def checkf(f, fargs, value=None, ngrad=None, with_sgrad=True):
         ng = cg.numeric_gradient(f, fargs)
         sg = cg.symbolic_gradient(f) 
         for k in fargs.keys():
-            if ngrad[k] != approx(cg.value(sg[k], fargs)):
+            if not all(np.isclose(ngrad[k], cg.value(sg[k], fargs))):
                 pytest.fail("""Function SYMBOLIC GRAD check failed
                 f: {}, 
                 df/d{}: {},
@@ -46,6 +46,7 @@ def test_add():
 
     f = x + y
     checkf(f, {x:2, y:3}, value=5, ngrad={x: 1, y:1})
+    checkf(f, {x:[2,3], y:[4,5]}, value=[6,8], ngrad={x:[1, 1], y:[1, 1]})
 
 def test_sub():
     x = cg.Symbol('x')
@@ -53,6 +54,7 @@ def test_sub():
 
     f = x - y
     checkf(f, {x:2, y:3}, value=-1, ngrad={x: 1, y:-1})
+    checkf(f, {x:[2,3], y:[4,5]}, value=[-2,-2], ngrad={x:[1, 1], y:[-1, -1]})
 
 def test_mul():
     x = cg.Symbol('x')
@@ -99,6 +101,7 @@ def test_exp():
     
     f = cg.sym_exp(x)
     checkf(f, {x:2}, value=math.exp(2), ngrad={x: math.exp(2)})
+    checkf(f, {x:[1,0]}, value=[math.exp(1), math.exp(0)], ngrad={x: [math.exp(1), math.exp(0)]})
 
 def test_sum():
     x = cg.Symbol('x')
@@ -162,5 +165,18 @@ def test_complex_expr():
             z:-0.64010571103387
         })
 
+def test_function():
+    x = cg.Symbol('x')
+    y = cg.Symbol('y')
 
+    e = (x * y + 3)
+    f = cg.Function(e, [x, y])
+
+    assert np.isclose(f(2, 1), 5)
+    assert all(np.isclose(f([2,3], [1,2]), [5, 9]))
+
+    v, g = f([2,3], [1,2], compute_gradient=True)
+    assert all(np.isclose(v, [5, 9]))
+    assert all(np.isclose(g[0], [1, 2]))
+    assert all(np.isclose(g[1], [2, 3]))
 

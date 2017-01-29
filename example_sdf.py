@@ -10,9 +10,9 @@ sx = cg.Symbol('x')
 sy = cg.Symbol('y')
 
 f = sdf.line(sx, sy, n=[0, 1], d=-1.8) | sdf.line(sx, sy, n=[1, 1], d=-1.8) | sdf.line(sx, sy, n=[-1, 1], d=-1.8) | (sdf.subtract(sdf.circle(sx, sy, c=[0, -0.8], r=0.5), sdf.circle(sx, sy, c=[0, -0.5], r=0.5)))
-k = sdf.Function(f, [sx, sy])
+F = cg.Function(f, [sx, sy])
 
-n = 60
+n = 100
 stype = np.dtype([('x', float, 2), ('v', float, 2)])
 p = np.zeros(n, dtype=[
     ('s', stype), 
@@ -44,8 +44,8 @@ def explicit_euler(s, sd, h):
 
 class ParticleSimulation:
 
-    def __init__(self, particles, forcegens, sdworld, h, integrator=explicit_euler):
-        self.sdworld = sdworld
+    def __init__(self, particles, forcegens, f, h, integrator=explicit_euler):
+        self.f = f
         self.p = particles
         self.forcegens = forcegens
         self.h = h
@@ -72,14 +72,14 @@ class ParticleSimulation:
 
         x = s['x']
         xnew = snew['x']
-        dbefore = self.sdworld(x[:, 0], x[:, 1])
-        dafter, g = self.sdworld(xnew[:,0], xnew[:,1], with_gradient=True)
+        dbefore = self.f(x[:, 0], x[:, 1])
+        dafter, g = self.f(xnew[:, 0], xnew[:, 1], compute_gradient=True)
 
         dafter -= p['r'] # Correct for radius
 
         cids = np.where(dafter <= 0)[0]
         if len(cids) > 0:
-            # Collision response for items in collision          
+            # Collision response for items in collision     
             g = g[cids]
             n = g / np.linalg.norm(g, axis=1)[:, np.newaxis]
 
@@ -106,12 +106,13 @@ ax.axis('off')
 
 
 X, Y = np.mgrid[-2:2:100j, -2:2:100j]
-r, g = k(X.reshape(-1, 1), Y.reshape(-1, 1), with_gradient=True)
+r, g = F(X.reshape(-1), Y.reshape(-1), compute_gradient=True)
+
+#r, g = k(X.reshape(-1, 1), Y.reshape(-1, 1), with_gradient=True)
 shape = X.shape
 v = r.reshape(shape)
 dx = g[:,0].reshape(shape)
 dy = g[:,1].reshape(shape)
-
 
 cont = ax.contour(X, Y, v, levels=[0])
 #cont = ax.contour(X, Y, v)
@@ -122,7 +123,7 @@ actors = [plt.Circle((0,0), radius=p['r'][i]) for i in range(n)]
 for c in actors:
     ax.add_patch(c)
 
-ps = ParticleSimulation(p, [gravity], k, 0.02)
+ps = ParticleSimulation(p, [gravity], F, 0.02)
 
 def animate(i):
     ps.update(0)
