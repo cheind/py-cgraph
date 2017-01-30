@@ -15,11 +15,12 @@ class Min(cg.Node):
         return np.minimum(v[0], v[1])
 
     def compute_gradient(self, cv, value):
-        a = np.zeros((2,) + cv[0].shape)        
-        m = cv[0] <= cv[1]
-        a[0, np.where(m)[0]] = 1
-        a[1, np.where(np.logical_not(m))[0]] = 1
-        return a
+        m = (cv[0] <= cv[1])
+        ids = np.where(m)[0]
+
+        a = np.zeros(cv[0].shape); a[ids] = 1.
+        b = np.ones(cv[1].shape); b[ids] = 0.
+        return [a,b]
 
 class Max(cg.Node):
     """Maximum of two expressions `max(x, y)`."""
@@ -34,12 +35,12 @@ class Max(cg.Node):
         return np.maximum(v[0], v[1])
 
     def compute_gradient(self, cv, value):
-        a = np.zeros((2,) + cv[0].shape)        
-        
-        m = cv[0] >= cv[1]
-        a[0, np.where(m)[0]] = 1
-        a[1, np.where(np.logical_not(m))[0]] = 1
-        return a
+        m = (cv[0] >= cv[1])
+        ids = np.where(m)[0]
+
+        a = np.zeros(cv[0].shape); a[ids] = 1.
+        b = np.ones(cv[1].shape); b[ids] = 0.
+        return [a,b]
 
 @cg.wrap_args
 def sym_min(a, b):

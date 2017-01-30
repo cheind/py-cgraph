@@ -136,11 +136,11 @@ class Add(Node):
     def __str__(self):
         return '({} + {})'.format(str(self[0]), str(self[1]))
 
-    def compute_value(self, v):
-        return v[0] + v[1]
+    def compute_value(self, cv):
+        return cv[0] + cv[1]
     
     def compute_gradient(self, cv, value):
-        return np.ones((2,) +  cv[0].shape)
+        return [np.ones(cv[0].shape), np.ones(cv[1].shape)]
     
     def symbolic_gradient(self):
         return [Constant(1), Constant(1)]
@@ -155,12 +155,12 @@ class Sum(Node):
     def __str__(self):
         return '({})'.format(' + '.join([str(c) for c in self.children]))        
 
-    def compute_value(self, v):
-        return np.sum(v)
+    def compute_value(self, cv):
+        return np.sum(cv, axis=0)
     
     def compute_gradient(self, cv, value):
-        return np.ones((len(cv),) + cv[0].shape)
-    
+        return [np.ones(v.shape) for v in cv]
+        
     def symbolic_gradient(self):
         return [Constant(1)]*len(self.children)
 
@@ -173,13 +173,11 @@ class Sub(Node):
     def __str__(self):
         return '({} - {})'.format(str(self[0]), str(self[1]))
 
-    def compute_value(self, v):
-        return v[0] - v[1]
+    def compute_value(self, cv):
+        return cv[0] - cv[1]
     
     def compute_gradient(self, cv, value):
-        g = np.ones((2,) +  cv[0].shape)
-        g[1] = -1
-        return g
+        return [np.ones(cv[0].shape), -np.ones(cv[1].shape)]
     
     def symbolic_gradient(self):
         return [Constant(1), Constant(-1)]
@@ -193,11 +191,11 @@ class Mul(Node):
     def __str__(self):
         return '({}*{})'.format(str(self[0]), str(self[1]))
 
-    def compute_value(self, v):
-        return v[0] * v[1]
+    def compute_value(self, cv):
+        return cv[0] * cv[1]
     
     def compute_gradient(self, cv, value):
-        return np.vstack((cv[1], cv[0]))
+        return [cv[1], cv[0]]
 
     def symbolic_gradient(self):
         return [self[1], self[0]]
@@ -211,14 +209,11 @@ class Div(Node):
     def __str__(self):
         return '({}/{})'.format(str(self[0]), str(self[1]))
 
-    def compute_value(self, v):
-        return v[0] / v[1]
+    def compute_value(self, cv):
+        return cv[0] / cv[1]
     
     def compute_gradient(self, cv, value):
-        return np.vstack((
-            1. / cv[1],
-            -cv[0] / cv[1]**2
-        ))
+        return [1. / cv[1], -cv[0] / cv[1]**2]
     
     def symbolic_gradient(self):
         return [
@@ -235,11 +230,11 @@ class Logarithm(Node):
     def __str__(self):
         return 'log({})'.format(str(self[0]))
 
-    def compute_value(self, v):
-        return np.log(v[0])
+    def compute_value(self, cv):
+        return np.log(cv[0])
 
     def compute_gradient(self, cv, value):
-        return (1./ cv[0]).reshape(1,-1)
+        return [1./ cv[0]]
 
     def symbolic_gradient(self):
         return [Constant(1) / self[0]]
@@ -254,11 +249,11 @@ class Neg(Node):
     def __str__(self):
         return '-{}'.format(str(self[0]))
 
-    def compute_value(self, v):
-        return -v[0]
+    def compute_value(self, cv):
+        return -cv[0]
 
     def compute_gradient(self, cv, value):
-        return -np.ones((1,) +  cv[0].shape)
+        return [-np.ones(cv[0].shape)]
 
     def symbolic_gradient(self):
         return [Constant(-1)]
@@ -273,14 +268,14 @@ class Pow(Node):
     def __str__(self):
         return '{}**{}'.format(str(self[0]), str(self[1]))
 
-    def compute_value(self, v):
-        return v[0]**v[1]
+    def compute_value(self, cv):
+        return cv[0]**cv[1]
 
     def compute_gradient(self, cv, value):
-        return np.vstack((
-            cv[1] * cv[0]**(cv[1]-1),
+        return [
+            cv[1] * cv[0]**(cv[1]-1), 
             value * np.log(cv[0])
-        ))
+        ]
 
     def symbolic_gradient(self):
         return [
@@ -301,7 +296,7 @@ class Exp(Node):
         return np.exp(v[0])
 
     def compute_gradient(self, cv, value):
-        return np.copy(value).reshape(1,-1)
+        return [value]
         
     def symbolic_gradient(self):
         return [self]
@@ -319,12 +314,10 @@ class Sqrt(Node):
         return np.sqrt(v[0])
 
     def compute_gradient(self, cv, value):
-        return (1. / (2 * value)).reshape(1, -1)
+        return [1. / (2 * value)]
 
     def symbolic_gradient(self):
-        return [
-            Constant(1) / (Constant(2) * self)
-        ]  
+        return [ Constant(1) / (Constant(2) * self)]  
 
 def wrap_number(n):
     """Wraps a plain number as Constant object."""
@@ -458,8 +451,7 @@ def bfs(node, node_data):
 def numpyify(fargs):
     """Turns each value in the given dict into a numpy array."""
     tuples = [(k, np.atleast_1d(v)) for k, v in fargs.items()]
-    shape = tuples[0][1].shape if len(tuples) > 0 else (1,)
-    return dict(tuples), shape
+    return dict(tuples)
             
 def values(f, fargs):
     """
@@ -469,15 +461,15 @@ def values(f, fargs):
     for Symbols are given in `fargs`.
     """
 
-    fargs, shape = numpyify(fargs)
+    fargs = numpyify(fargs)
+    
     v = {}    
     v.update(fargs)
     
     for n in postorder(f):
         if (not n in v) and (not isinstance(n, Symbol)):
             cvalues = n.child_values(v)
-            value = n.compute_value(cvalues)
-            v[n] = value if value.shape == shape else np.resize(value, shape)
+            v[n] = n.compute_value(cvalues)
 
     return v
 
@@ -487,20 +479,18 @@ def value(f, fargs):
     
 def numeric_gradient(f, fargs, return_all_values=False, return_value=False):
     """Computes the numerical partial derivatives of `f` with respect to all nodes using backpropagation."""
-
-    fargs, shape = numpyify(fargs)
     
     vals = values(f, fargs)
-    derivatives = defaultdict(lambda shape=shape: np.zeros(shape))
+    derivatives = defaultdict(lambda : 0.)
     
-    gen = bfs(f, np.ones(shape))
+    gen = bfs(f, 1)
     try:
         n, in_grad = next(gen)
         while True:
             derivatives[n] += in_grad
             cvalues = n.child_values(vals)
-            local_grad = n.compute_gradient(cvalues, vals[n])
-            n, in_grad = gen.send(local_grad * in_grad[np.newaxis, :])
+            g = n.compute_gradient(cvalues, vals[n])
+            n, in_grad = gen.send([gi * in_grad for gi in g])
     except StopIteration:
         if return_all_values:
             return derivatives, vals

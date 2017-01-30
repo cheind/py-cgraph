@@ -12,7 +12,7 @@ sy = cg.Symbol('y')
 f = sdf.line(sx, sy, n=[0, 1], d=-1.8) | sdf.line(sx, sy, n=[1, 1], d=-1.8) | sdf.line(sx, sy, n=[-1, 1], d=-1.8) | (sdf.subtract(sdf.circle(sx, sy, c=[0, -0.8], r=0.5), sdf.circle(sx, sy, c=[0, -0.5], r=0.5)))
 F = cg.Function(f, [sx, sy])
 
-n = 100
+n = 50
 stype = np.dtype([('x', float, 2), ('v', float, 2)])
 p = np.zeros(n, dtype=[
     ('s', stype), 
@@ -26,8 +26,8 @@ p = np.zeros(n, dtype=[
 p['s']['x'] = np.random.multivariate_normal([0, 1], [[0.05, 0],[0, 0.05]], n)
 p['s']['v'] = np.random.multivariate_normal([0, 0], [[0.1, 0],[0, 0.1]], n)
 p['m'] = np.random.uniform(1, 10, size=n)
-p['cr'] = 0.7
-p['cf'] = 0.6
+p['cr'] = 0.6
+p['cf'] = 0.4
 p['r'] = p['m'] * 0.01
 
 
