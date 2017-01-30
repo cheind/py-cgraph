@@ -13,7 +13,7 @@ sy = cg.Symbol('y')
 f = sdf.line(sx, sy, n=[0, 1], d=-1.8) | sdf.line(sx, sy, n=[1, 1], d=-1.8) | sdf.line(sx, sy, n=[-1, 1], d=-1.8) | (sdf.subtract(sdf.circle(sx, sy, c=[0, -0.8], r=0.5), sdf.circle(sx, sy, c=[0, -0.5], r=0.5)))
 F = cg.Function(f, [sx, sy])
 
-n = 50
+n = 100
 stype = np.dtype([('x', float, 2), ('v', float, 2)])
 p = np.zeros(n, dtype=[
     ('s', stype), 
@@ -83,15 +83,16 @@ class ParticleSimulation:
             self.t += self.dt
         
     def step(self):
-
         s = p['s']
         sd = self.dynamics(self.t)
         snew = self.int(s, sd, self.t, self.dt)
 
         x = s['x']
         xnew = snew['x']
+        
         dbefore = self.f(x[:, 0], x[:, 1])
         dafter, g = self.f(xnew[:, 0], xnew[:, 1], compute_gradient=True)
+        
 
         dafter -= p['r'] # Correct for radius
 
@@ -115,7 +116,6 @@ class ParticleSimulation:
             snew['v'][cids] = -cr * vn + (1 - cf) * vt
         
         p['s'] = snew
-
 
 
 fig, ax = plt.subplots()
