@@ -1,5 +1,6 @@
 
 import numpy as np
+import time
 
 import sdf
 import cgraph as cg
@@ -35,22 +36,23 @@ def gravity(p, t):
     p['f'][:, 1] += p['m'] * -1
 
 
-def explicit_euler(s, sd, h):
+def explicit_euler(s, sd, t, dt):
     snew = np.empty(len(s), dtype=stype)
-    snew['x'] = s['x'] + sd['x']*h
-    snew['v'] = s['v'] + sd['v']*h
+    snew['x'] = s['x'] + sd['x']*dt
+    snew['v'] = s['v'] + sd['v']*dt
     return snew
 
 
 class ParticleSimulation:
 
-    def __init__(self, particles, forcegens, f, h, integrator=explicit_euler):
+    def __init__(self, particles, forcegens, f, timestep=1/30, integrator=explicit_euler):
         self.f = f
         self.p = particles
         self.forcegens = forcegens
-        self.h = h
+        self.dt = timestep
         self.t = 0
         self.int = integrator
+        self.current_wall_time = None
 
     def forces(self, t):
         self.p['f'].fill(0.)
@@ -65,10 +67,26 @@ class ParticleSimulation:
         sd['v'] = self.forces(t) / self.p['m'][:, np.newaxis]
         return sd
 
-    def update(self, d):
+    def update(self):
+        if self.current_wall_time is None:
+            self.current_wall_time = time.time()
+            self.tacc = 0.      
+
+        new_wall_time = time.time()
+        frame_time = new_wall_time - self.current_wall_time
+        self.current_wall_time = new_wall_time
+        self.tacc += frame_time
+
+        while self.tacc >= self.dt:
+            self.step()
+            self.tacc -= self.dt
+            self.t += self.dt
+        
+    def step(self):
+
         s = p['s']
-        sd = self.dynamics(0)
-        snew = self.int(s, sd, self.h)
+        sd = self.dynamics(self.t)
+        snew = self.int(s, sd, self.t, self.dt)
 
         x = s['x']
         xnew = snew['x']
@@ -98,6 +116,8 @@ class ParticleSimulation:
         
         p['s'] = snew
 
+
+
 fig, ax = plt.subplots()
 ax.set_xlim((-2, 2))
 ax.set_ylim((-2, 2))
@@ -123,17 +143,17 @@ actors = [plt.Circle((0,0), radius=p['r'][i]) for i in range(n)]
 for c in actors:
     ax.add_patch(c)
 
-ps = ParticleSimulation(p, [gravity], F, 0.02)
+ps = ParticleSimulation(p, [gravity], F, timestep=1/60)
 
 def animate(i):
-    ps.update(0)
+    ps.update()
     for i, a in enumerate(actors):
         a.center = p['s']['x'][i, :]
     return actors
 
 anim = animation.FuncAnimation(fig, animate,  
                                frames=1000, 
-                               interval=10,
+                               interval=1000/30,
                                repeat=False,
                                blit=True)
 plt.show()
