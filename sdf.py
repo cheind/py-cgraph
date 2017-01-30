@@ -18,8 +18,8 @@ class Min(cg.Node):
         m = (cv[0] <= cv[1])
         ids = np.where(m)[0]
 
-        a = np.zeros(cv[0].shape); a[ids] = 1.
-        b = np.ones(cv[1].shape); b[ids] = 0.
+        a = np.zeros(m.shape); a[ids] = 1.
+        b = np.ones(m.shape); b[ids] = 0.
         return [a,b]
 
 class Max(cg.Node):
@@ -38,8 +38,8 @@ class Max(cg.Node):
         m = (cv[0] >= cv[1])
         ids = np.where(m)[0]
 
-        a = np.zeros(cv[0].shape); a[ids] = 1.
-        b = np.ones(cv[1].shape); b[ids] = 0.
+        a = np.zeros(m.shape); a[ids] = 1.
+        b = np.ones(m.shape); b[ids] = 0.
         return [a,b]
 
 @cg.wrap_args
@@ -59,37 +59,79 @@ def sym_max(a, b):
     n.children[1] = b
     return n
 
+zeroeps = np.nextafter(0, 1)
+
 @cg.wrap_args
 def sym_smin(a, b, k=32):
-    # http://www.iquilezles.org/www/articles/smin/smin.htm
+    # Note that min(a,b) = -max(-a, -b)
+    # http://math.stackexchange.com/questions/30843/is-there-an-analytic-approximation-to-the-minimum-function
     r = cg.sym_exp(-k * a) + cg.sym_exp(-k * b)
-    return -cg.sym_log(r) / k
+    return -cg.sym_log(sym_max(r, zeroeps)) / k
 
 @cg.wrap_args
-def circle(x, y, c=np.array([0,0]), r=1.):
-    """Return the signed distance function for a circle."""
-    return cg.sym_sqrt((c[0] - x)**2 + (c[1] - y)**2) - r
+def sym_smax(a, b, k=32):    
+    r = cg.sym_exp(k * a) + cg.sym_exp(k * b)
+    return cg.sym_log(sym_max(r, zeroeps)) / k
 
-@cg.wrap_args
-def line(x, y, n=np.array([1,0]), d=0):    
-    """Return the signed distance function for a line."""
-    n /= np.linalg.norm(n)
-    return n[0] * x + n[1] * y - d
+class SDFNode:
 
-@cg.wrap_args
-def union(a, b):
-    """Return union of two signed distance functions."""
-    return sym_min(a, b)
+    x = cg.Symbol('x')
+    y = cg.Symbol('y')
 
-@cg.wrap_args
-def subtract(a, b):
-    """Return subtraction signed distance functions."""
-    return sym_max(a, -b)
+    def __init__(self, sdf):
+        self.sdf = sdf
+        self.F = None
+        
+    def __call__(self, x, y, compute_gradient=False):
+        """Provides function call semantics for expression tree represented by this node. """
+        if self.F is None:
+            self.F = cg.Function(self.sdf, [SDFNode.x, SDFNode.y])
 
-@cg.wrap_args
-def sunion(a, b, k=5):
-    """Return smooth union of two signed distance functions."""
-    return sym_smin(a, b, k=k)
+        return self.F(x, y, compute_gradient=compute_gradient)
 
+    def __or__(self, other):
+        return Union(self, other, k=10)
 
-cg.Node.__or__ = lambda self, other: union(self, other)
+    def __and__(self, other):
+        return Intersection(self, other, k=10)
+
+    def __sub__(self, other):
+        return Difference(self, other)
+    
+
+class Circle(SDFNode):
+
+    def __init__(self, center=[0,0], radius=1):
+        sdf = cg.sym_sqrt((center[0] - SDFNode.x)**2 + (center[1] - SDFNode.y)**2) - radius
+        super(Circle, self).__init__(sdf)
+
+class Line(SDFNode):
+    def __init__(self, normal=[1,0], d=0):
+        n =  normal / np.linalg.norm(normal)
+        sdf = n[0] * SDFNode.x + n[1] * SDFNode.y - d
+        
+        super(Line, self).__init__(sdf)
+
+class Union(SDFNode):
+    def __init__(self, left, right, k=None):
+        if k == None:
+            sdf = sym_min(left.sdf, right.sdf)
+        else:
+            sdf = sym_smin(left.sdf, right.sdf, k=k)
+        
+        super(Union, self).__init__(sdf)
+
+class Difference(SDFNode):
+
+    def __init__(self, left, right):
+        sdf = sym_max(left.sdf, -right.sdf)
+        super(Difference, self).__init__(sdf)
+
+class Intersection(SDFNode):
+    
+    def __init__(self, left, right, k=None):
+        if k is None:
+            sdf = sym_max(left.sdf, right.sdf)
+        else:
+            sdf = sym_smax(left.sdf, right.sdf, k=k)
+        super(Intersection, self).__init__(sdf)

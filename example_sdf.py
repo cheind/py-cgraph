@@ -7,11 +7,11 @@ import cgraph as cg
 import matplotlib.pyplot as plt
 from matplotlib import animation
 
-sx = cg.Symbol('x')
-sy = cg.Symbol('y')
+f = sdf.Line(normal=[0, 1], d=-1.8) | sdf.Line(normal=[1, 1], d=-1.8) | sdf.Line(normal=[-1, 1], d=-1.8)
+#f = f | sdf.Circle(center=[0, -0.8], radius=0.5) - sdf.Circle(center=[0, -0.5], radius=0.5)
+f = f | (sdf.Circle(center=[0, -0.8], radius=0.5) & sdf.Line(normal=[0.1, 1], d=-0.5))
 
-f = sdf.line(sx, sy, n=[0, 1], d=-1.8) | sdf.line(sx, sy, n=[1, 1], d=-1.8) | sdf.line(sx, sy, n=[-1, 1], d=-1.8) | (sdf.subtract(sdf.circle(sx, sy, c=[0, -0.8], r=0.5), sdf.circle(sx, sy, c=[0, -0.5], r=0.5)))
-F = cg.Function(f, [sx, sy])
+#f = sdf.line(sx, sy, n=[0, 1], d=-1.8) | sdf.line(sx, sy, n=[1, 1], d=-1.8) | sdf.line(sx, sy, n=[-1, 1], d=-1.8) | (sdf.subtract(sdf.circle(sx, sy, c=[0, -0.8], r=0.5), sdf.circle(sx, sy, c=[0, -0.5], r=0.5)))
 
 
 def create_particles(n=100):
@@ -22,7 +22,7 @@ def create_particles(n=100):
     p['m'] = np.ones(n)
     p['r'] = np.ones(n)
     p['cr'] = np.full(n, 0.6)
-    p['cf'] = np.full(n, 0.6)
+    p['cf'] = np.full(n, 0.3)
     return p
 
 
@@ -133,9 +133,8 @@ ax.set_aspect('equal')
 ax.axis('off')
 
 X, Y = np.mgrid[-2:2:100j, -2:2:100j]
-r, g = F(X.reshape(-1), Y.reshape(-1), compute_gradient=True)
+r, g = f(X.reshape(-1), Y.reshape(-1), compute_gradient=True)
 
-#r, g = k(X.reshape(-1, 1), Y.reshape(-1, 1), with_gradient=True)
 shape = X.shape
 v = r.reshape(shape)
 dx = g[:,0].reshape(shape)
@@ -150,7 +149,7 @@ actors = [plt.Circle((0,0), radius=particles['r'][i]) for i in range(n)]
 for c in actors:
     ax.add_patch(c)
 
-ps = ParticleSimulation(particles, [gravity], F, timestep=1/60)
+ps = ParticleSimulation(particles, [gravity], f, timestep=1/60)
 
 def animate(i):
     ps.update()
