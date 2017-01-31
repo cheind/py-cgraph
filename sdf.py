@@ -137,9 +137,35 @@ class Intersection(SDFNode):
         super(Intersection, self).__init__(sdf)
 
 def grid_eval(sdf, bounds=[(-2,2), (-2,2)], samples=[100j, 100j]):
-    x, y = np.mgrid[
+    y, x = np.mgrid[
         bounds[0][0]:bounds[0][1]:samples[0], 
-        bounds[1][0]:bounds[1][1]:samples[0]
+        bounds[1][0]:bounds[1][1]:samples[1]
     ]
     d, grads = sdf(x.reshape(-1), y.reshape(-1), compute_gradient=True)
     return x, y, d.reshape(x.shape), grads.reshape(x.shape + (2,))
+
+class GridSDF:
+
+    def __init__(self, sdf, bounds=[(-2,2), (-2,2)], samples=[100j, 100j]):
+        x, y, d, g = grid_eval(sdf, bounds=bounds, samples=samples)
+
+        self.d = d
+        self.g = g
+        self.xmin = bounds[0][0]
+        self.ymin = bounds[1][0]
+        self.xres = x[0, 1] - x[0, 0]
+        self.yres = y[1, 0] - y[0, 0]
+
+    def __call__(self, x, y, compute_gradient=False):
+        from scipy.ndimage import map_coordinates
+   
+        x = (np.atleast_1d(x) - self.xmin) / self.xres
+        y = (np.atleast_1d(y) - self.ymin) / self.yres
+
+
+        d = map_coordinates(self.d, [y, x], order=1, mode='reflect')
+        gx = map_coordinates(self.g[:,:,0], [y, x], order=1, mode='reflect')
+        gy = map_coordinates(self.g[:,:,1], [y, x], order=1, mode='reflect')
+        
+        return d, np.column_stack((gx, gy))
+

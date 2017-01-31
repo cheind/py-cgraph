@@ -8,14 +8,6 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 from matplotlib.collections import PatchCollection
 
-f = sdf.Line(normal=[0, 1], d=-1.8) | sdf.Line(normal=[1, 1], d=-1.8) | sdf.Line(normal=[-1, 1], d=-1.8)
-#f = f | sdf.Circle(center=[0, -0.8], radius=0.5) - sdf.Circle(center=[0, -0.5], radius=0.5)
-f = f | (sdf.Circle(center=[0, -0.8], radius=0.5) & sdf.Line(normal=[0.1, 1], d=-0.5))
-
-def gravity(p, t):
-    return p['m'][:, np.newaxis] * np.array([0, -1]) 
-
-
 def explicit_euler(x, v, dx, dv, t, dt):
     xnew = np.empty(x.shape)
     vnew = np.empty(v.shape)
@@ -72,6 +64,7 @@ class ParticleSimulator:
 
         return dx, dv
 
+    #@timeit
     def update(self):
         new_wall_time = time.time()
         frame_time = new_wall_time - self.current_wall_time
@@ -83,7 +76,7 @@ class ParticleSimulator:
             self.tacc -= self.dt
             self.t += self.dt
     
-    @timeit
+    
     def advance(self):
         xcur = self.p['x']
         vcur = self.p['v']
@@ -113,17 +106,6 @@ class ParticleSimulator:
         
         self.p['x'][:] = xnew
         self.p['v'][:] = vnew
-
-def create_particles(n=1000):
-    p = {}
-    p['n'] = n
-    p['x'] = np.random.multivariate_normal([0, 1], [[0.05, 0],[0, 0.05]], n)
-    p['v'] = np.random.multivariate_normal([0, 0], [[0.1, 0],[0, 0.1]], n)
-    p['m'] = np.random.uniform(1, 10, size=n)
-    p['r'] = p['m'] * 0.01
-    p['cr'] = np.full(n, 0.6)
-    p['cf'] = np.full(n, 0.3)
-    return p
 
 def plot_background(fig, ax, f, bounds=[(-2,2), (-2,2)], show_quiver=True, show_isolines='all'):
     
@@ -189,10 +171,34 @@ def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=
 
     return anim
 
-ps = ParticleSimulator(f, create_particles, timestep=1/60)
+f = sdf.Line(normal=[0, 1], d=-1.8) | sdf.Line(normal=[1, 1], d=-1.8) | sdf.Line(normal=[-1, 1], d=-1.8)
+f = f | (sdf.Circle(center=[0, -0.8], radius=0.5) & sdf.Line(normal=[0.1, 1], d=-0.5))
+
+def gravity(p, t):
+    return p['m'][:, np.newaxis] * np.array([0, -1]) 
+
+#f = f | sdf.Line(normal=[0, -1], d=-1.8)
+g = sdf.GridSDF(f, samples=[100j, 100j])
+def grad(p, t, f=g):
+    """Force along gradients for fun"""
+    d, g = f(p['x'][:, 0], p['x'][:, 1], compute_gradient=True)
+    return g * p['m'][:, np.newaxis]
+
+def create_particles(n=100):
+    p = {}
+    p['n'] = n
+    p['x'] = np.random.multivariate_normal([0, 1], [[0.05, 0],[0, 0.05]], n)
+    p['v'] = np.random.multivariate_normal([0, 0], [[0.1, 0],[0, 0.1]], n)
+    p['m'] = np.random.uniform(1, 10, size=n)
+    p['r'] = p['m'] * 0.01
+    p['cr'] = np.full(n, 0.6)
+    p['cf'] = np.full(n, 0.3)
+    return p
+
+ps = ParticleSimulator(g, create_particles, timestep=1/60)
 ps.force_generators += [gravity]
 
 fig, ax = plt.subplots()
-plot_background(fig, ax, f, show_quiver=True, show_isolines='zero')
+plot_background(fig, ax, g, show_quiver=True, show_isolines='zero')
 anim = create_animation(fig, ax, ps)
 plt.show()
