@@ -9,8 +9,9 @@ from matplotlib import animation
 from matplotlib.collections import PatchCollection
 
 f = sdf.Line(normal=[0, 1], d=-1.8) | sdf.Line(normal=[1, 1], d=-1.8) | sdf.Line(normal=[-1, 1], d=-1.8)
-#f = f | sdf.Circle(center=[0, -0.8], radius=0.5) - sdf.Circle(center=[0, -0.5], radius=0.5)
+f = f | sdf.Circle(center=[0, -0.8], radius=0.5) - sdf.Circle(center=[0, -0.5], radius=0.5)
 f = f | (sdf.Circle(center=[0, -0.8], radius=0.5) & sdf.Line(normal=[0.1, 1], d=-0.5))
+
 
 def create_particles(n=100):
     p = {}
@@ -45,6 +46,14 @@ def explicit_euler(x, v, dx, dv, t, dt):
 
     return xnew, vnew
 
+def timeit(f):
+    def wrap(*args):
+        time1 = time.time()
+        ret = f(*args)
+        time2 = time.time()
+        print('Took {}'.format(time2-time1))
+        return ret
+    return wrap
 
 class ParticleSimulation:
 
@@ -92,7 +101,8 @@ class ParticleSimulation:
             self.advance()
             self.tacc -= self.dt
             self.t += self.dt
-        
+    
+    @timeit
     def advance(self):
         xcur = self.p['x']
         vcur = self.p['v']
@@ -159,7 +169,9 @@ skip = (slice(None, None, 5), slice(None, None, 5))
 ax.quiver(X[skip], Y[skip], dx[skip], dy[skip], v[skip])
 
 actors = [plt.Circle((0,0), radius=particles['r'][i]) for i in range(n)]
-patch = ax.add_artist(PatchCollection(actors, offset_position='data'))
+patch = ax.add_artist(PatchCollection(actors, offset_position='data', alpha=0.4, zorder=10))
+patch.set_array(np.random.rand(len(actors)))
+
 
 ps = ParticleSimulation(particles, [gravity], f, timestep=1/60)
 
