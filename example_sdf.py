@@ -9,29 +9,8 @@ from matplotlib import animation
 from matplotlib.collections import PatchCollection
 
 f = sdf.Line(normal=[0, 1], d=-1.8) | sdf.Line(normal=[1, 1], d=-1.8) | sdf.Line(normal=[-1, 1], d=-1.8)
-f = f | sdf.Circle(center=[0, -0.8], radius=0.5) - sdf.Circle(center=[0, -0.5], radius=0.5)
+#f = f | sdf.Circle(center=[0, -0.8], radius=0.5) - sdf.Circle(center=[0, -0.5], radius=0.5)
 f = f | (sdf.Circle(center=[0, -0.8], radius=0.5) & sdf.Line(normal=[0.1, 1], d=-0.5))
-
-
-def create_particles(n=100):
-    p = {}
-    p['n'] = n
-    p['x'] = np.zeros((n, 2))
-    p['v'] = np.zeros((n, 2))
-    p['m'] = np.ones(n)
-    p['r'] = np.ones(n)
-    p['cr'] = np.full(n, 0.6)
-    p['cf'] = np.full(n, 0.3)
-    return p
-
-
-n = 100
-particles = create_particles(n=n)
-particles['x'] = np.random.multivariate_normal([0, 1], [[0.05, 0],[0, 0.05]], n)
-particles['v'] = np.random.multivariate_normal([0, 0], [[0.1, 0],[0, 0.1]], n)
-particles['m'] = np.random.uniform(1, 10, size=n)
-particles['r'] = particles['m'] * 0.01
-
 
 def gravity(p, t):
     return p['m'][:, np.newaxis] * np.array([0, -1]) 
@@ -55,24 +34,31 @@ def timeit(f):
         return ret
     return wrap
 
-class ParticleSimulation:
+class ParticleSimulator:
 
-    def __init__(self, particles, forcegens, f, timestep=1/30, integrator=explicit_euler):
-        self.f = f
-        self.p = particles
+    def __init__(self, sdf, particle_creator, timestep=1/30):
+        self.sdf = None
+        self.p = None        
+        self.dt = timestep
+        
+        self.sdf = sdf        
+        self.particle_creator = particle_creator
+        self.force_generators = []
+        self.integrator = explicit_euler       
+        
+    def reset(self):
+        self.p = self.particle_creator()
         self.p['f'] = np.zeros((self.p['n'], 2))
 
-        self.forcegens = forcegens
-        self.dt = timestep
         self.t = 0
-        self.integrator = integrator
-        self.current_wall_time = None
+        self.current_wall_time = time.time()
+        self.tacc = 0.      
 
     def forces(self):
         facc = self.p['f']
         
         facc.fill(0.)
-        for fg in self.forcegens:
+        for fg in self.force_generators:
             k = fg(self.p, self.t)
             facc += k
 
@@ -88,10 +74,6 @@ class ParticleSimulation:
         return dx, dv
 
     def update(self):
-        if self.current_wall_time is None:
-            self.current_wall_time = time.time()
-            self.tacc = 0.      
-
         new_wall_time = time.time()
         frame_time = new_wall_time - self.current_wall_time
         self.current_wall_time = new_wall_time
@@ -110,7 +92,7 @@ class ParticleSimulation:
         dx, dv = self.dynamics()
         xnew, vnew = self.integrator(xcur, vcur, dx, dv, self.t, self.dt)
         
-        d, g = self.f(xnew[:, 0], xnew[:, 1], compute_gradient=True)
+        d, g = self.sdf(xnew[:, 0], xnew[:, 1], compute_gradient=True)
         d -= self.p['r'] # Correct for radius of particles
 
         cids = np.where(d <= 0)[0]
@@ -133,61 +115,89 @@ class ParticleSimulation:
         self.p['x'][:] = xnew
         self.p['v'][:] = vnew
 
+def create_particles(n=1000):
+    p = {}
+    p['n'] = n
+    p['x'] = np.random.multivariate_normal([0, 1], [[0.05, 0],[0, 0.05]], n)
+    p['v'] = np.random.multivariate_normal([0, 0], [[0.1, 0],[0, 0.1]], n)
+    p['m'] = np.random.uniform(1, 10, size=n)
+    p['r'] = p['m'] * 0.01
+    p['cr'] = np.full(n, 0.6)
+    p['cf'] = np.full(n, 0.3)
+    return p
 
-fig, ax = plt.subplots()
-ax.set_xlim((-2, 2))
-ax.set_ylim((-2, 2))
-ax.set_aspect('equal')
-ax.set_axis_bgcolor('white')
-
-ax.tick_params(
-    axis='both',          # changes apply to the x-axis
-    which='both',      # both major and minor ticks are affected
-    bottom='off',      # ticks along the bottom edge are off
-    top='off',         # ticks along the top edge are off
-    left='off',
-    right='off',
-    labelbottom='off',
-    labeltop='off',
-    labelleft='off',
-    labelright='off',
+def plot_background(fig, ax, sdf, bounds=[(-2,2), (-2,2)], show_quiver=True, show_isolines='all'):
+    
+    ax.set_xlim(bounds[0])
+    ax.set_ylim(bounds[1])
+    ax.set_aspect('equal')
+    ax.tick_params(
+        axis='both',
+        which='both',
+        bottom='off',
+        top='off',
+        left='off',
+        right='off',
+        labelbottom='off',
+        labeltop='off',
+        labelleft='off',
+        labelright='off',
     )
 
+    if show_quiver or show_isolines:
+
+        X, Y = np.mgrid[bounds[0][0]:bounds[0][1]:100j, bounds[1][0]:bounds[1][1]:100j]
+        r, g = sdf(X.reshape(-1), Y.reshape(-1), compute_gradient=True)
+
+        shape = X.shape
+        v = r.reshape(shape)
+        dx = g[:,0].reshape(shape)
+        dy = g[:,1].reshape(shape)
+
+        if show_isolines == 'all':
+            cont = ax.contour(X, Y, v)
+        elif show_isolines == 'zero':
+            cont = ax.contour(X, Y, v, levels=[0])       
+
+        if show_quiver:
+            skip = (slice(None, None, 5), slice(None, None, 5))
+            ax.quiver(X[skip], Y[skip], dx[skip], dy[skip], v[skip])
 
 
-X, Y = np.mgrid[-2:2:100j, -2:2:100j]
-r, g = f(X.reshape(-1), Y.reshape(-1), compute_gradient=True)
+def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=1/30, repeat=True):
+    patch = None
 
-shape = X.shape
-v = r.reshape(shape)
-dx = g[:,0].reshape(shape)
-dy = g[:,1].reshape(shape)
+    def init_anim():
+        global patch
 
-#cont = ax.contour(X, Y, v, levels=[0])
-cont = ax.contour(X, Y, v)
-skip = (slice(None, None, 5), slice(None, None, 5))
-ax.quiver(X[skip], Y[skip], dx[skip], dy[skip], v[skip])
+        ps.reset()
+        actors = [plt.Circle((0,0), radius=ps.p['r'][i]) for i in range(ps.p['n'])]        
+        patch = ax.add_artist(PatchCollection(actors, offset_position='data', alpha=0.6, zorder=10))
+        patch.set_array(np.random.rand(len(actors)))
+        return patch,
 
-actors = [plt.Circle((0,0), radius=particles['r'][i]) for i in range(n)]
-patch = ax.add_artist(PatchCollection(actors, offset_position='data', alpha=0.4, zorder=10))
-patch.set_array(np.random.rand(len(actors)))
+    def update_anim(i):
+        global patch
 
+        ps.update()        
+        patch.set_offsets(ps.p['x'])
+        return patch,
 
-ps = ParticleSimulation(particles, [gravity], f, timestep=1/60)
+    anim = animation.FuncAnimation(
+        fig, 
+        update_anim,  
+        init_func=init_anim,
+        interval=timestep * 1000,
+        frames=frames,
+        repeat=repeat,
+        blit=True)
 
-def animate(i):
-    ps.update()
-    patch.set_offsets(particles['x'])
-    return patch,
+    return anim
 
-anim = animation.FuncAnimation(fig, animate,  
-                               frames=500, 
-                               interval=1000/30,
-                               repeat=False,
-                               blit=True)
+ps = ParticleSimulator(f, create_particles, timestep=1/60)
+ps.force_generators += [gravity]
 
-#Writer = animation.writers['ffmpeg']
-#writer = Writer(fps=30, metadata=dict(artist='Me'), bitrate=512000)
-#anim.save('im.mp4', writer=writer)
-
+fig, ax = plt.subplots()
+plot_background(fig, ax, f, show_quiver=True, show_isolines='zero')
+anim = create_animation(fig, ax, ps)
 plt.show()
