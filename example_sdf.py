@@ -36,12 +36,11 @@ def timeit(f):
 
 class ParticleSimulator:
 
-    def __init__(self, sdf, particle_creator, timestep=1/30):
-        self.sdf = None
+    def __init__(self, f, particle_creator, timestep=1/30):
         self.p = None        
         self.dt = timestep
         
-        self.sdf = sdf        
+        self.sdf = f
         self.particle_creator = particle_creator
         self.force_generators = []
         self.integrator = explicit_euler       
@@ -126,7 +125,7 @@ def create_particles(n=1000):
     p['cf'] = np.full(n, 0.3)
     return p
 
-def plot_background(fig, ax, sdf, bounds=[(-2,2), (-2,2)], show_quiver=True, show_isolines='all'):
+def plot_background(fig, ax, f, bounds=[(-2,2), (-2,2)], show_quiver=True, show_isolines='all'):
     
     ax.set_xlim(bounds[0])
     ax.set_ylim(bounds[1])
@@ -145,23 +144,19 @@ def plot_background(fig, ax, sdf, bounds=[(-2,2), (-2,2)], show_quiver=True, sho
     )
 
     if show_quiver or show_isolines:
-
-        X, Y = np.mgrid[bounds[0][0]:bounds[0][1]:100j, bounds[1][0]:bounds[1][1]:100j]
-        r, g = sdf(X.reshape(-1), Y.reshape(-1), compute_gradient=True)
-
-        shape = X.shape
-        v = r.reshape(shape)
-        dx = g[:,0].reshape(shape)
-        dy = g[:,1].reshape(shape)
-
+        x, y, d, g = sdf.grid_eval(f, bounds=bounds)
+        
         if show_isolines == 'all':
-            cont = ax.contour(X, Y, v)
+            cont = ax.contour(x, y, d)
         elif show_isolines == 'zero':
-            cont = ax.contour(X, Y, v, levels=[0])       
+            cont = ax.contour(x, y, d, levels=[0])       
 
         if show_quiver:
+            dx = g[:,:,0]
+            dy = g[:,:,1]
+
             skip = (slice(None, None, 5), slice(None, None, 5))
-            ax.quiver(X[skip], Y[skip], dx[skip], dy[skip], v[skip])
+            ax.quiver(x[skip], y[skip], dx[skip], dy[skip], d[skip])
 
 
 def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=1/30, repeat=True):

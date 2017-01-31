@@ -135,3 +135,11 @@ class Intersection(SDFNode):
         else:
             sdf = sym_smax(left.sdf, right.sdf, k=k)
         super(Intersection, self).__init__(sdf)
+
+def grid_eval(sdf, bounds=[(-2,2), (-2,2)], samples=[100j, 100j]):
+    x, y = np.mgrid[
+        bounds[0][0]:bounds[0][1]:samples[0], 
+        bounds[1][0]:bounds[1][1]:samples[0]
+    ]
+    d, grads = sdf(x.reshape(-1), y.reshape(-1), compute_gradient=True)
+    return x, y, d.reshape(x.shape), grads.reshape(x.shape + (2,))
