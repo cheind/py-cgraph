@@ -156,7 +156,7 @@ dy = g[:,1].reshape(shape)
 #cont = ax.contour(X, Y, v, levels=[0])
 cont = ax.contour(X, Y, v)
 skip = (slice(None, None, 5), slice(None, None, 5))
-ax.quiver(X[skip], Y[skip], dx[skip], dy[skip], v)
+ax.quiver(X[skip], Y[skip], dx[skip], dy[skip], v[skip])
 
 actors = [plt.Circle((0,0), radius=particles['r'][i]) for i in range(n)]
 patch = ax.add_artist(PatchCollection(actors, offset_position='data'))
