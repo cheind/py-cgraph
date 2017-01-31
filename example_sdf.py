@@ -6,13 +6,11 @@ import sdf
 import cgraph as cg
 import matplotlib.pyplot as plt
 from matplotlib import animation
+from matplotlib.collections import PatchCollection
 
 f = sdf.Line(normal=[0, 1], d=-1.8) | sdf.Line(normal=[1, 1], d=-1.8) | sdf.Line(normal=[-1, 1], d=-1.8)
 #f = f | sdf.Circle(center=[0, -0.8], radius=0.5) - sdf.Circle(center=[0, -0.5], radius=0.5)
 f = f | (sdf.Circle(center=[0, -0.8], radius=0.5) & sdf.Line(normal=[0.1, 1], d=-0.5))
-
-#f = sdf.line(sx, sy, n=[0, 1], d=-1.8) | sdf.line(sx, sy, n=[1, 1], d=-1.8) | sdf.line(sx, sy, n=[-1, 1], d=-1.8) | (sdf.subtract(sdf.circle(sx, sy, c=[0, -0.8], r=0.5), sdf.circle(sx, sy, c=[0, -0.5], r=0.5)))
-
 
 def create_particles(n=100):
     p = {}
@@ -130,7 +128,22 @@ fig, ax = plt.subplots()
 ax.set_xlim((-2, 2))
 ax.set_ylim((-2, 2))
 ax.set_aspect('equal')
-ax.axis('off')
+ax.set_axis_bgcolor('white')
+
+ax.tick_params(
+    axis='both',          # changes apply to the x-axis
+    which='both',      # both major and minor ticks are affected
+    bottom='off',      # ticks along the bottom edge are off
+    top='off',         # ticks along the top edge are off
+    left='off',
+    right='off',
+    labelbottom='off',
+    labeltop='off',
+    labelleft='off',
+    labelright='off',
+    )
+
+
 
 X, Y = np.mgrid[-2:2:100j, -2:2:100j]
 r, g = f(X.reshape(-1), Y.reshape(-1), compute_gradient=True)
@@ -140,26 +153,29 @@ v = r.reshape(shape)
 dx = g[:,0].reshape(shape)
 dy = g[:,1].reshape(shape)
 
-cont = ax.contour(X, Y, v, levels=[0])
-#cont = ax.contour(X, Y, v)
+#cont = ax.contour(X, Y, v, levels=[0])
+cont = ax.contour(X, Y, v)
 skip = (slice(None, None, 5), slice(None, None, 5))
 ax.quiver(X[skip], Y[skip], dx[skip], dy[skip], v)
 
 actors = [plt.Circle((0,0), radius=particles['r'][i]) for i in range(n)]
-for c in actors:
-    ax.add_patch(c)
+patch = ax.add_artist(PatchCollection(actors, offset_position='data'))
 
 ps = ParticleSimulation(particles, [gravity], f, timestep=1/60)
 
 def animate(i):
     ps.update()
-    for i, a in enumerate(actors):
-        a.center = particles['x'][i, :]
-    return actors
+    patch.set_offsets(particles['x'])
+    return patch,
 
 anim = animation.FuncAnimation(fig, animate,  
-                               frames=1000, 
+                               frames=500, 
                                interval=1000/30,
                                repeat=False,
                                blit=True)
+
+#Writer = animation.writers['ffmpeg']
+#writer = Writer(fps=30, metadata=dict(artist='Me'), bitrate=512000)
+#anim.save('im.mp4', writer=writer)
+
 plt.show()
