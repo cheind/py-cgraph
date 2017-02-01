@@ -41,9 +41,9 @@ class ParticleSimulator:
         self.p = self.particle_creator()
         self.p['f'] = np.zeros((self.p['n'], 2))
 
-        self.t = 0
-        self.current_wall_time = time.time()
-        self.tacc = 0.      
+        self.t = 0        
+        self.tacc = 0.
+        self.current_wall_time = time.time()      
 
     def forces(self):
         facc = self.p['f']
@@ -64,7 +64,7 @@ class ParticleSimulator:
 
         return dx, dv
 
-    @timeit
+    #@timeit
     def update(self):
         new_wall_time = time.time()
         frame_time = new_wall_time - self.current_wall_time
@@ -107,8 +107,7 @@ class ParticleSimulator:
         self.p['x'][:] = xnew
         self.p['v'][:] = vnew
 
-def plot_background(fig, ax, f, bounds=[(-2,2), (-2,2)], show_quiver=True, show_isolines='all'):
-    
+def setup_axes(ax, bounds=[(-2,2), (-2,2)]):
     ax.set_xlim(bounds[0])
     ax.set_ylim(bounds[1])
     ax.set_aspect('equal')
@@ -125,33 +124,47 @@ def plot_background(fig, ax, f, bounds=[(-2,2), (-2,2)], show_quiver=True, show_
         labelright='off',
     )
 
+
+def plot_sdf(fig, ax, f, bounds=[(-2,2), (-2,2)], show_quiver=True, show_isolines='all'):
+    setup_axes(ax, bounds)
+
+    ret = {}    
+
     if show_quiver or show_isolines:
         x, y, d, g = sdf.grid_eval(f, bounds=bounds)
         
         if show_isolines == 'all':
-            cont = ax.contour(x, y, d)
+            ret['contour'] = ax.contour(x, y, d)
         elif show_isolines == 'zero':
-            cont = ax.contour(x, y, d, levels=[0])       
+            ret['contour'] = ax.contour(x, y, d, levels=[0])       
 
         if show_quiver:
             dx = g[:,:,0]
             dy = g[:,:,1]
 
             skip = (slice(None, None, 5), slice(None, None, 5))
-            ax.quiver(x[skip], y[skip], dx[skip], dy[skip], d[skip])
-
+            ret['quiver'] = ax.quiver(x[skip], y[skip], dx[skip], dy[skip], d[skip])
+            
+    return ret
 
 def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=1/30, repeat=True):
     patches = []
 
-    def init_anim():        
+    def init_anim():
+        setup_axes(ax, bounds)      
         ps.reset()
-        return patches
+        return []
 
     def update_anim(i):
         if i == 0:
-            # Don't do this inside init_anim..seems like matplotlib keeps a static image
-            # of all circles at (0,0) during animation.
+            # We initialize the circles in here. It seems like matplotlib keeps a static image
+            # of all circles at (0,0) when calling the same method inside init_anim. Also, we need a
+            # new circle collection when an animation repeats, because adii of circles might have 
+            # changed during ps.reset()            
+            if len(patches) > 0:
+                patches[0].remove()
+                patches.pop()
+
             actors = [plt.Circle((0,0), radius=ps.p['r'][i]) for i in range(ps.p['n'])]        
             patch = ax.add_artist(PatchCollection(actors, offset_position='data', alpha=0.6, zorder=10))
             patch.set_array(np.random.rand(len(actors)))
@@ -197,10 +210,10 @@ def create_particles(n=1000):
     p['cf'] = np.full(n, 0.3)
     return p
 
-ps = ParticleSimulator(g, create_particles, timestep=1/60)
+ps = ParticleSimulator(f, create_particles, timestep=1/60)
 ps.force_generators += [gravity]
 
 fig, ax = plt.subplots()
-plot_background(fig, ax, f, show_quiver=True, show_isolines='zero')
-anim = create_animation(fig, ax, ps)
+plot_sdf(fig, ax, f, show_quiver=True, show_isolines='zero')
+anim = create_animation(fig, ax, ps, frames=500)
 plt.show()
