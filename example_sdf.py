@@ -64,7 +64,7 @@ class ParticleSimulator:
 
         return dx, dv
 
-    #@timeit
+    @timeit
     def update(self):
         new_wall_time = time.time()
         frame_time = new_wall_time - self.current_wall_time
@@ -142,23 +142,24 @@ def plot_background(fig, ax, f, bounds=[(-2,2), (-2,2)], show_quiver=True, show_
 
 
 def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=1/30, repeat=True):
-    patch = None
+    patches = []
 
-    def init_anim():
-        global patch
-
+    def init_anim():        
         ps.reset()
-        actors = [plt.Circle((0,0), radius=ps.p['r'][i]) for i in range(ps.p['n'])]        
-        patch = ax.add_artist(PatchCollection(actors, offset_position='data', alpha=0.6, zorder=10))
-        patch.set_array(np.random.rand(len(actors)))
-        return patch,
+        return patches
 
     def update_anim(i):
-        global patch
+        if i == 0:
+            # Don't do this inside init_anim..seems like matplotlib keeps a static image
+            # of all circles at (0,0) during animation.
+            actors = [plt.Circle((0,0), radius=ps.p['r'][i]) for i in range(ps.p['n'])]        
+            patch = ax.add_artist(PatchCollection(actors, offset_position='data', alpha=0.6, zorder=10))
+            patch.set_array(np.random.rand(len(actors)))
+            patches.append(patch)
 
         ps.update()        
-        patch.set_offsets(ps.p['x'])
-        return patch,
+        patches[0].set_offsets(ps.p['x'])
+        return patches
 
     anim = animation.FuncAnimation(
         fig, 
@@ -174,6 +175,7 @@ def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=
 f = sdf.Line(normal=[0, 1], d=-1.8) | sdf.Line(normal=[1, 1], d=-1.8) | sdf.Line(normal=[-1, 1], d=-1.8)
 f = f | (sdf.Circle(center=[0, -0.8], radius=0.5) & sdf.Line(normal=[0.1, 1], d=-0.5))
 
+
 def gravity(p, t):
     return p['m'][:, np.newaxis] * np.array([0, -1]) 
 
@@ -184,7 +186,7 @@ def grad(p, t, f=g):
     d, g = f(p['x'][:, 0], p['x'][:, 1], compute_gradient=True)
     return g * p['m'][:, np.newaxis]
 
-def create_particles(n=100):
+def create_particles(n=1000):
     p = {}
     p['n'] = n
     p['x'] = np.random.multivariate_normal([0, 1], [[0.05, 0],[0, 0.05]], n)
@@ -199,6 +201,6 @@ ps = ParticleSimulator(g, create_particles, timestep=1/60)
 ps.force_generators += [gravity]
 
 fig, ax = plt.subplots()
-plot_background(fig, ax, g, show_quiver=True, show_isolines='zero')
+plot_background(fig, ax, f, show_quiver=True, show_isolines='zero')
 anim = create_animation(fig, ax, ps)
 plt.show()
