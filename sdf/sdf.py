@@ -18,21 +18,40 @@ Christoph Heindl, 2017
 
 import cgraph as cg
 import numpy as np
-  
 
-zeroeps = np.nextafter(0, 1)
+from contextlib import contextmanager
+
+_state = {'smoothness': 0}
+"""Tracks global SDF properties. 
+These properties are applied when modelling SDF functions involving functions that cannot take
+parameters. Using `&` for joining two SDFs does not allow for any properties such as smoothness
+parameters to be passed along. You should not modify the state directly but instead use 
+context managers to adapt settings."""
+
+@contextmanager
+def smoothness(s):
+    global _state    
+    prev = _state
+    try:       
+        _state = _state.copy()
+        _state['smoothness'] = s
+        yield       
+    finally:
+        _state = prev
+
+_zeroeps = np.nextafter(0, 1)
 
 @cg.wrap_args
 def sym_smin(a, b, k=32):
     # Note that min(a,b) = -max(-a, -b)
     # http://math.stackexchange.com/questions/30843/is-there-an-analytic-approximation-to-the-minimum-function
     r = cg.sym_exp(-k * a) + cg.sym_exp(-k * b)
-    return -cg.sym_log(cg.sym_max(r, zeroeps)) / k
+    return -cg.sym_log(cg.sym_max(r, _zeroeps)) / k
 
 @cg.wrap_args
 def sym_smax(a, b, k=32):    
     r = cg.sym_exp(k * a) + cg.sym_exp(k * b)
-    return cg.sym_log(cg.sym_max(r, zeroeps)) / k
+    return cg.sym_log(cg.sym_max(r, _zeroeps)) / k
 
 class SDFNode:
 
@@ -51,10 +70,10 @@ class SDFNode:
         return self.F(x, y, compute_gradient=compute_gradient)
 
     def __or__(self, other):
-        return Union(self, other, k=10)
+        return Union(self, other, k=_state['smoothness'])
 
     def __and__(self, other):
-        return Intersection(self, other, k=10)
+        return Intersection(self, other, k=_state['smoothness'])
 
     def __sub__(self, other):
         return Difference(self, other)
@@ -75,10 +94,10 @@ class Line(SDFNode):
 
 class Union(SDFNode):
     def __init__(self, left, right, k=None):
-        if k == None:
-            sdf = cg.sym_min(left.sdf, right.sdf)
+        if k:
+            sdf = sym_smin(left.sdf, right.sdf, k=k)            
         else:
-            sdf = sym_smin(left.sdf, right.sdf, k=k)
+            sdf = cg.sym_min(left.sdf, right.sdf)
         
         super(Union, self).__init__(sdf)
 
@@ -91,10 +110,11 @@ class Difference(SDFNode):
 class Intersection(SDFNode):
     
     def __init__(self, left, right, k=None):
-        if k is None:
-            sdf = cg.sym_max(left.sdf, right.sdf)
+        if k:
+            sdf = sym_smax(left.sdf, right.sdf, k=k)            
         else:
-            sdf = sym_smax(left.sdf, right.sdf, k=k)
+            sdf = cg.sym_max(left.sdf, right.sdf)
+
         super(Intersection, self).__init__(sdf)
 
 def grid_eval(sdf, bounds=[(-2,2), (-2,2)], samples=[100j, 100j]):
