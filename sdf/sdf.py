@@ -21,23 +21,37 @@ import numpy as np
 
 from contextlib import contextmanager
 
-_state = {'smoothness': 0}
+_state = {
+    'x': cg.Symbol('x'),
+    'y': cg.Symbol('y'),
+    'smoothness': 0
+}
 """Tracks global SDF properties. 
+
 These properties are applied when modelling SDF functions involving functions that cannot take
 parameters. Using `&` for joining two SDFs does not allow for any properties such as smoothness
 parameters to be passed along. You should not modify the state directly but instead use 
-context managers to adapt settings."""
+context managers to adapt settings.
 
-@contextmanager
-def smoothness(s):
+Elements:
+    'x' : Symbol representing variable spatial `x` coordinate in SDF expressions.
+    'y' : Symbol representing variable spatial `y` coordinate in SDF expressions.
+    'smoothness' : Controls the smoothness when joining / intersecting signed distance functions
+"""
+
+def properties(newprops):
+    """Updates the state with the new properties given."""
     global _state        
-    try:
+    try:        
         prev = _state
-        _state = _state.copy()
-        _state['smoothness'] = s
+        _state = {**_state, **newprops}
         yield       
     finally:
         _state = prev
+
+@contextmanager
+def smoothness(s):
+    yield from properties({'smoothness':s})
 
 _zeroeps = np.nextafter(0, 1)
 
@@ -69,11 +83,6 @@ class SDFNode:
         s = sdf.Circle(center=[0, -0.8], radius=0.5) & sdf.Line(normal=[0.1, 1], d=-0.5)
     """
 
-    x = cg.Symbol('x')
-    """Symbol representing variable spatial `x` coordinate in SDF expressions."""
-    y = cg.Symbol('y')
-    """Symbol representing variable spatial `y` coordinate in SDF expressions."""
-
     def __init__(self, sdf):
         """Inititialize with sdf expression."""
         self.sdf = sdf
@@ -83,7 +92,7 @@ class SDFNode:
         """Returns the signed distances for all pairs of x,y coordinates."""
 
         if self.F is None: # Lazy construction
-            self.F = cg.Function(self.sdf, [SDFNode.x, SDFNode.y])
+            self.F = cg.Function(self.sdf, [_state['x'], _state['y']])
 
         return self.F(x, y, compute_gradient=compute_gradient)
 
@@ -103,7 +112,7 @@ class Circle(SDFNode):
     """Represents the SDF of a circle in 2D."""
 
     def __init__(self, center=[0,0], radius=1):
-        sdf = cg.sym_sqrt((center[0] - SDFNode.x)**2 + (center[1] - SDFNode.y)**2) - radius
+        sdf = cg.sym_sqrt((center[0] - _state['x'])**2 + (center[1] - _state['y'])**2) - radius
         super(Circle, self).__init__(sdf)
 
 class Line(SDFNode):
@@ -115,7 +124,7 @@ class Line(SDFNode):
 
     def __init__(self, normal=[1,0], d=0):
         n =  normal / np.linalg.norm(normal)
-        sdf = n[0] * SDFNode.x + n[1] * SDFNode.y - d
+        sdf = n[0] * _state['x'] + n[1] * _state['y'] - d
         
         super(Line, self).__init__(sdf)
 
@@ -165,14 +174,14 @@ def grid_eval(sdf, bounds=[(-2,2), (-2,2)], samples=[100j, 100j]):
     return x, y, d.reshape(x.shape), grads.reshape(x.shape + (2,))
 
 class GridSDF:
-    """Provides fast approximate signed distance value / gradient computation.
+    """Provides fast approximate signed distance value / gradient computations.
 
     The performance of computing signed distance values decreases with deeper
     and more nested SDFNode hierarchies. GridSDF provides a method to make 
-    signed distance values / gradients computations O(1) independently of the
+    signed distance values / gradients computations O(1) independent of the
     function itself. This is accomplished by rasterizing the signed distance
-    function at the corners of a grid once. When queried distance values
-    are simply lookup up in the grid store. Since position usually don't fall
+    function at grid corners once. When queried, distance values are simply 
+    looked up in the grid data. Since positions usually don't fall
     at corners exactly, GridSDF performs a bilinear interpolation of values.
     """
 
