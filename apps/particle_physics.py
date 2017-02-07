@@ -159,7 +159,7 @@ def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=
         if i == 0:
             # We initialize the circles in here. It seems like matplotlib keeps a static image
             # of all circles at (0,0) when calling the same method inside init_anim. Also, we need a
-            # new circle collection when an animation repeats, because adii of circles might have 
+            # new circle collection when an animation repeats, because radii of circles might have 
             # changed during ps.reset()            
             if len(patches) > 0:
                 patches[0].remove()

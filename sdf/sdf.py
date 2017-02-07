@@ -1,63 +1,24 @@
+"""CGraph - symbolic computation in Python library.
+
+This library is the result of my efforts to understand symbolic computation of
+functions factored as expression trees. In a few lines of code it shows how to
+forward evaluate functions and how to perform numeric and symbolic derivatives
+computations using backpropagation.
+
+While this library is not complete (and will never be) it offers the interested
+reader some insights on one way in which symbolic computation can be performed.
+
+The code is accompanied by a series of notebooks that explain the fundamental
+concepts. You can find these notebooks online at
+
+    https://github.com/cheind/py-cgraph
+
+Christoph Heindl, 2017
+"""
+
 import cgraph as cg
 import numpy as np
   
-
-class Min(cg.Node):
-    """Minimum of two expressions `min(x, y)`."""
-
-    def __init__(self):
-        super(Min, self).__init__(nary=2)
-
-    def __str__(self):
-        return 'min({},{})'.format(str(self[0]), str(self[1]))
-
-    def compute_value(self, v):
-        return np.minimum(v[0], v[1])
-
-    def compute_gradient(self, cv, value):
-        m = (cv[0] <= cv[1])
-        ids = np.where(m)[0]
-
-        a = np.zeros(m.shape); a[ids] = 1.
-        b = np.ones(m.shape); b[ids] = 0.
-        return [a,b]
-
-class Max(cg.Node):
-    """Maximum of two expressions `max(x, y)`."""
-
-    def __init__(self):
-        super(Max, self).__init__(nary=2)
-
-    def __str__(self):
-        return 'max({},{})'.format(str(self[0]), str(self[1]))
-
-    def compute_value(self, v):
-        return np.maximum(v[0], v[1])
-
-    def compute_gradient(self, cv, value):
-        m = (cv[0] >= cv[1])
-        ids = np.where(m)[0]
-
-        a = np.zeros(m.shape); a[ids] = 1.
-        b = np.ones(m.shape); b[ids] = 0.
-        return [a,b]
-
-@cg.wrap_args
-def sym_min(a, b):
-    """Returns a new node that represents `min(x,y)`."""
-    n = Min()
-    n.children[0] = a
-    n.children[1] = b
-    return n
-
-
-@cg.wrap_args
-def sym_max(a, b):
-    """Returns a new node that represents `max(x,y)`."""
-    n = Max()
-    n.children[0] = a
-    n.children[1] = b
-    return n
 
 zeroeps = np.nextafter(0, 1)
 
@@ -66,12 +27,12 @@ def sym_smin(a, b, k=32):
     # Note that min(a,b) = -max(-a, -b)
     # http://math.stackexchange.com/questions/30843/is-there-an-analytic-approximation-to-the-minimum-function
     r = cg.sym_exp(-k * a) + cg.sym_exp(-k * b)
-    return -cg.sym_log(sym_max(r, zeroeps)) / k
+    return -cg.sym_log(cg.sym_max(r, zeroeps)) / k
 
 @cg.wrap_args
 def sym_smax(a, b, k=32):    
     r = cg.sym_exp(k * a) + cg.sym_exp(k * b)
-    return cg.sym_log(sym_max(r, zeroeps)) / k
+    return cg.sym_log(cg.sym_max(r, zeroeps)) / k
 
 class SDFNode:
 
@@ -115,7 +76,7 @@ class Line(SDFNode):
 class Union(SDFNode):
     def __init__(self, left, right, k=None):
         if k == None:
-            sdf = sym_min(left.sdf, right.sdf)
+            sdf = cg.sym_min(left.sdf, right.sdf)
         else:
             sdf = sym_smin(left.sdf, right.sdf, k=k)
         
@@ -124,14 +85,14 @@ class Union(SDFNode):
 class Difference(SDFNode):
 
     def __init__(self, left, right):
-        sdf = sym_max(left.sdf, -right.sdf)
+        sdf = cg.sym_max(left.sdf, -right.sdf)
         super(Difference, self).__init__(sdf)
 
 class Intersection(SDFNode):
     
     def __init__(self, left, right, k=None):
         if k is None:
-            sdf = sym_max(left.sdf, right.sdf)
+            sdf = cg.sym_max(left.sdf, right.sdf)
         else:
             sdf = sym_smax(left.sdf, right.sdf, k=k)
         super(Intersection, self).__init__(sdf)

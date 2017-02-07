@@ -1,37 +1,26 @@
+"""CGraph - symbolic computation in Python library.
 
-import pytest
+This library is the result of my efforts to understand symbolic computation of
+functions factored as expression trees. In a few lines of code it shows how to
+forward evaluate functions and how to perform numeric and symbolic derivatives
+computations using backpropagation.
+
+While this library is not complete (and will never be) it offers the interested
+reader some insights on one way in which symbolic computation can be performed.
+
+The code is accompanied by a series of notebooks that explain the fundamental
+concepts. You can find these notebooks online at
+
+    https://github.com/cheind/py-cgraph
+
+Christoph Heindl, 2017
+"""
+
 import math
 import numpy as np
 
+from cgraph.test.utils import checkf
 import cgraph as cg
-
-def checkf(f, fargs, value=None, ngrad=None, with_sgrad=True):
-    #__tracebackhide__ = True
-   
-    v = cg.value(f, fargs)
-    if not all(np.isclose(value, v)):
-        pytest.fail("""Function VALUE check failed
-        f: {}
-        expected value of {} - received {}""".format(f, value, v))
-
-    if ngrad is not None:
-        ng = cg.numeric_gradient(f, fargs)    
-        for k in fargs.keys():
-            if not all(np.isclose(ngrad[k], ng[k])):
-                pytest.fail("""Function NUMERIC GRAD check failed
-                f: {}, 
-                df/d{}
-                expected value of {} - received {}""".format(f, k, ngrad[k], ng[k]))
-
-    if ngrad is not None and with_sgrad:
-        ng = cg.numeric_gradient(f, fargs)
-        sg = cg.symbolic_gradient(f) 
-        for k in fargs.keys():
-            if not all(np.isclose(ngrad[k], cg.value(sg[k], fargs))):
-                pytest.fail("""Function SYMBOLIC GRAD check failed
-                f: {}, 
-                df/d{}: {},
-                expected value of {} - received {}""".format(f, k, sg[k], ngrad[k], cg.value(sg[k], fargs)))
 
 def complexity(f):
     count = 0
@@ -115,6 +104,20 @@ def test_sqrt():
     
     f = cg.sym_sqrt(x)
     checkf(f, {x:4}, value=2, ngrad={x: 0.25})
+
+def test_min():
+    x = cg.Symbol('x')
+    y = cg.Symbol('y')
+
+    f = cg.sym_min(x, y)
+    checkf(f, {x:2, y:1}, value=1, ngrad={x:0, y:1}, with_sgrad=False)
+
+def test_max():
+    x = cg.Symbol('x')
+    y = cg.Symbol('y')
+
+    f = cg.sym_max(x, y)
+    checkf(f, {x:2, y:1}, value=2, ngrad={x:1, y:0}, with_sgrad=False)
 
 def test_reuse_of_expr():
     x = cg.Symbol('x')

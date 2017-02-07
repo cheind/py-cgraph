@@ -319,6 +319,56 @@ class Sqrt(Node):
     def symbolic_gradient(self):
         return [ Constant(1) / (Constant(2) * self)]  
 
+class Min(Node):
+    """Minimum of two expressions `min(x, y)`.
+    
+    Symbolic gradient is not yet implemented as it requires a piecewise
+    construct that isn't provided by cgraph.
+    """
+
+    def __init__(self):
+        super(Min, self).__init__(nary=2)
+
+    def __str__(self):
+        return 'min({},{})'.format(str(self[0]), str(self[1]))
+
+    def compute_value(self, v):
+        return np.minimum(v[0], v[1])
+
+    def compute_gradient(self, cv, value):
+        # Gradient is 1 for whatever value is less, other one is zero.
+        m = (cv[0] <= cv[1])
+        ids = np.where(m)[0]
+
+        a = np.zeros(m.shape); a[ids] = 1.
+        b = np.ones(m.shape); b[ids] = 0.
+        return [a,b]
+
+class Max(Node):
+    """Maximum of two expressions `max(x, y)`.
+    
+    Symbolic gradient is not yet implemented as it requires a piecewise
+    construct that isn't provided by cgraph.
+    """
+
+    def __init__(self):
+        super(Max, self).__init__(nary=2)
+
+    def __str__(self):
+        return 'max({},{})'.format(str(self[0]), str(self[1]))
+
+    def compute_value(self, v):
+        return np.maximum(v[0], v[1])
+
+    def compute_gradient(self, cv, value):
+        # Gradient is 1 for whatever value is greater, other one is zero.
+        m = (cv[0] >= cv[1])
+        ids = np.where(m)[0]
+
+        a = np.zeros(m.shape); a[ids] = 1.
+        b = np.ones(m.shape); b[ids] = 0.
+        return [a,b]
+
 def wrap_number(n):
     """Wraps a plain number as Constant object."""
     if isinstance(n, Number):
@@ -336,7 +386,7 @@ def wrap_args(func):
         
 @wrap_args
 def sym_add(x, y):
-    """Returns a new node that represents `x+y`."""
+    """Returns a new node representing `x+y`."""
     n = Add()
     n.children[0] = x
     n.children[1] = y
@@ -344,7 +394,7 @@ def sym_add(x, y):
 
 @wrap_args
 def sym_sub(x, y):
-    """Returns a new node that represents `x-y`."""
+    """Returns a new node representing `x-y`."""
     n = Sub()
     n.children[0] = x
     n.children[1] = y
@@ -352,7 +402,7 @@ def sym_sub(x, y):
 
 @wrap_args
 def sym_mul(x, y):
-    """Returns a new node that represents `x*y`."""
+    """Returns a new node representing `x*y`."""
     n = Mul()
     n.children[0] = x
     n.children[1] = y
@@ -360,7 +410,7 @@ def sym_mul(x, y):
 
 @wrap_args
 def sym_div(x, y):
-    """Returns a new node that represents `x/y`."""
+    """Returns a new node representing `x/y`."""
     n = Div()
     n.children[0] = x
     n.children[1] = y
@@ -368,21 +418,21 @@ def sym_div(x, y):
 
 @wrap_args
 def sym_log(x):
-    """Returns a new node that represents `ln(x)`."""
+    """Returns a new node representing `ln(x)`."""
     n = Logarithm()
     n.children[0] = x
     return n
 
 @wrap_args
 def sym_neg(x):
-    """Returns a new node that represents `-x`."""
+    """Returns a new node representing `-x`."""
     n = Neg()
     n.children[0] = x
     return n
 
 @wrap_args
 def sym_pow(x, y):
-    """Returns a new node that represents `x**y`."""
+    """Returns a new node representing `x**y`."""
     n = Pow()
     n.children[0] = x
     n.children[1] = y
@@ -390,22 +440,36 @@ def sym_pow(x, y):
 
 @wrap_args
 def sym_exp(x):
-    """Returns a new node that represents `e**x`."""
+    """Returns a new node representing `e**x`."""
     n = Exp()
     n.children[0] = x
     return n
     
-
 @wrap_args
 def sym_sqrt(x):
-    """Returns a new node that represents `sqrt(x)`."""
+    """Returns a new node representing `sqrt(x)`."""
     n = Sqrt()
     n.children[0] = x
     return n
 
+@wrap_args
+def sym_min(a, b):
+    """Returns a new node representing `min(x,y)`."""
+    n = Min()
+    n.children[0] = a
+    n.children[1] = b
+    return n
+
+@wrap_args
+def sym_max(a, b):
+    """Returns a new node representing `max(x,y)`."""
+    n = Max()
+    n.children[0] = a
+    n.children[1] = b
+    return n
+
 def sym_sum(x):
-    """
-    Returns a new node that represents the sum over all elements in `x`.
+    """Returns a new node that represents the sum over all elements in `x`.
 
     Instead of using a sequence binary `Add` that would generate very deep expression tree
     for large number of elements, we use the more efficient `Sum` that is capable of
@@ -423,8 +487,7 @@ def sym_sum(x):
     return n
 
 def postorder(node):
-    """
-    Yields all nodes discovered by depth-first-search in post-order starting from node.
+    """Yields all nodes discovered by depth-first-search in post-order starting from node.
 
     Note, this implementation uses a recursion. As such it has a limit on the
     how depth expression trees can become before Python raises maximum recursion depth exception.
@@ -434,8 +497,7 @@ def postorder(node):
     yield node
 
 def bfs(node, node_data):
-    """
-    Yields all nodes and associated data in breadth-first-search.
+    """Yields all nodes and associated data in breadth-first-search.
 
     Each node will be attached a node data. It is expected by this
     implementation that the caller returns (generator.send) an array
@@ -454,8 +516,7 @@ def numpyify(fargs):
     return dict(tuples)
             
 def values(f, fargs):
-    """
-    Returns a dictionary of computed values for each node in the expression tree including `f`.
+    """Returns a dictionary of computed values for each node in the expression tree including `f`.
     
     It is assumed by the implementation of this function that missing values
     for Symbols are given in `fargs`.
