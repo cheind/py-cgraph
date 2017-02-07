@@ -26,7 +26,7 @@ _state = {
     'y': cg.Symbol('y'),
     'smoothness': 0
 }
-"""Tracks global SDF properties. 
+"""Tracks SDF properties. 
 
 These properties are applied when modelling SDF functions involving functions that cannot take
 parameters. Using `&` for joining two SDFs does not allow for any properties such as smoothness
@@ -69,6 +69,24 @@ def sym_smin(a, b, k=32):
     # http://math.stackexchange.com/questions/30843/is-there-an-analytic-approximation-to-the-minimum-function
     r = cg.sym_exp(-k * a) + cg.sym_exp(-k * b)
     return -cg.sym_log(cg.sym_max(r, _zeroeps)) / k
+
+
+@contextmanager
+def transform(angle=0., offset=[0,0]):
+    c = np.cos(angle)
+    s = np.sin(angle)
+    x = _state['x']
+    y = _state['y']
+    
+    # Note, the following expressions (one for x, one for y) actually
+    # use the inverse of the transform, since inversly transforming the 
+    # coordinates is equivalent to 'positively' transforming the signed 
+    # distance function.
+    e = [
+        x * c + y * s - (offset[0] * c + offset[1] * s),
+        -x * s + y * c - (-offset[0] * s + offset[1] * c)
+    ]
+    yield from properties({'x':e[0], 'y':e[1]})
 
 class SDFNode:
     """Base class for nodes in an SDF expression.
