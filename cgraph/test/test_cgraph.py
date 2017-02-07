@@ -119,6 +119,18 @@ def test_max():
     f = cg.sym_max(x, y)
     checkf(f, {x:2, y:1}, value=2, ngrad={x:1, y:0}, with_sgrad=False)
 
+def test_sin():
+    x = cg.Symbol('x')
+
+    f = cg.sym_sin(x)
+    checkf(f, {x:2}, value=math.sin(2), ngrad={x:math.cos(2)})
+
+def test_cos():
+    x = cg.Symbol('x')
+
+    f = cg.sym_cos(x)
+    checkf(f, {x:2}, value=math.cos(2), ngrad={x:-math.sin(2)})
+
 def test_reuse_of_expr():
     x = cg.Symbol('x')
     y = cg.Symbol('y')

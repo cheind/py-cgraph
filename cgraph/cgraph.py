@@ -369,6 +369,42 @@ class Max(Node):
         b = np.ones(m.shape); b[ids] = 0.
         return [a,b]
 
+class Sin(Node):
+    """Sinus of expression `sin(x)`."""
+
+    def __init__(self):
+        super(Sin, self).__init__(nary=1)
+
+    def __str__(self):
+        return 'sin({})'.format(str(self[0]))
+
+    def compute_value(self, cv):
+        return np.sin(cv[0])
+
+    def compute_gradient(self, cv, value):
+        return [np.cos(cv[0])]
+
+    def symbolic_gradient(self):
+        return [sym_cos(self[0])]  
+
+class Cos(Node):
+    """Cosine of expression `cos(x)`."""
+
+    def __init__(self):
+        super(Cos, self).__init__(nary=1)
+
+    def __str__(self):
+        return 'cos({})'.format(str(self[0]))
+
+    def compute_value(self, cv):
+        return np.cos(cv[0])
+
+    def compute_gradient(self, cv, value):
+        return [-np.sin(cv[0])]
+
+    def symbolic_gradient(self):
+        return [-sym_sin(self[0])]  
+
 def wrap_number(n):
     """Wraps a plain number as Constant object."""
     if isinstance(n, Number):
@@ -466,6 +502,20 @@ def sym_max(a, b):
     n = Max()
     n.children[0] = a
     n.children[1] = b
+    return n
+
+@wrap_args
+def sym_cos(a):
+    """Returns a new node representing `cos(x)`."""
+    n = Cos()
+    n.children[0] = a
+    return n
+
+@wrap_args
+def sym_sin(a):
+    """Returns a new node representing `sin(x)`."""
+    n = Sin()
+    n.children[0] = a
     return n
 
 def sym_sum(x):
