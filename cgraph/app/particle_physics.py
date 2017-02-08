@@ -171,59 +171,13 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 from matplotlib.collections import PatchCollection
 
-def setup_axes(ax, bounds=[(-2,2), (-2,2)]):
-    """Set default matplotlib axis properties."""
-    ax.set_xlim(bounds[0])
-    ax.set_ylim(bounds[1])
-    ax.set_aspect('equal')
-    ax.tick_params(
-        axis='both',
-        which='both',
-        bottom='off',
-        top='off',
-        left='off',
-        right='off',
-        labelbottom='off',
-        labeltop='off',
-        labelleft='off',
-        labelright='off',
-    )
-
-def plot_sdf(fig, ax, f, bounds=[(-2,2), (-2,2)], show_quiver=True, show_isolines='all'):
-    """Plot a signed distance function.
-
-    This function plots the contours of the signed distance function and additionally 
-    is able to visualize gradients.
-    """
-
-    setup_axes(ax, bounds)
-
-    ret = {}    
-
-    if show_quiver or show_isolines:
-        x, y, d, g = sdf.grid_eval(f, bounds=bounds)
-        
-        if show_isolines == 'all':
-            ret['contour'] = ax.contour(x, y, d)
-        elif show_isolines == 'zero':
-            ret['contour'] = ax.contour(x, y, d, levels=[0])       
-
-        if show_quiver:
-            dx = g[:,:,0]
-            dy = g[:,:,1]
-
-            skip = (slice(None, None, 5), slice(None, None, 5))
-            ret['quiver'] = ax.quiver(x[skip], y[skip], dx[skip], dy[skip], d[skip])
-            
-    return ret
-
-def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=1/30, repeat=True):
+def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=1/30, repeat=True, use_wall_time=True):
     """Create a matplotlib animation involving a particle simulation."""
 
     patches = []
 
     def init_anim():
-        setup_axes(ax, bounds)      
+        sdf.setup_plot_axes(ax, bounds)      
         ps.reset()
         return []
 
@@ -242,7 +196,7 @@ def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=
             patch.set_array(np.random.rand(len(actors)))
             patches.append(patch)
 
-        ps.update(use_wall_time=False)        
+        ps.update(use_wall_time=use_wall_time)        
         patches[0].set_offsets(ps.p['x'])
         return patches
 
@@ -309,7 +263,7 @@ if __name__ == '__main__':
     # Plot result
     fig, ax = plt.subplots()
     fig.set_size_inches(1280/fig.dpi, 720/fig.dpi)
-    plot_sdf(fig, ax, f, bounds=[(-4,4), (-2.25,2.25)], show_quiver=True, show_isolines='zero')
+    sdf.plot_sdf(fig, ax, f, bounds=[(-4,4), (-2.25,2.25)], show_quiver=True, show_isolines='zero')
     anim = create_animation(fig, ax, ps, bounds=[(-4,4), (-2.25,2.25)], frames=400)
 
     #anim.save('test.mp4',fps=30, dpi=400)
