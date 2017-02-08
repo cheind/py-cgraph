@@ -245,9 +245,9 @@ class GridSDF:
         x = (np.atleast_1d(x) - self.xmin) / self.xres
         y = (np.atleast_1d(y) - self.ymin) / self.yres
 
-        d = map_coordinates(self.d, [y, x], order=1, mode='reflect')
-        gx = map_coordinates(self.g[:,:,0], [y, x], order=1, mode='reflect')
-        gy = map_coordinates(self.g[:,:,1], [y, x], order=1, mode='reflect')
+        d = map_coordinates(self.d, [y, x], order=1, mode='nearest')
+        gx = map_coordinates(self.g[:,:,0], [y, x], order=1, mode='nearest')
+        gy = map_coordinates(self.g[:,:,1], [y, x], order=1, mode='nearest')
         
         return d, np.column_stack((gx, gy))
 
