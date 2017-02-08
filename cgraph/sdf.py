@@ -125,11 +125,11 @@ class SDFNode:
 
     def __or__(self, other):
         """Union with other node."""
-        return Union(self, other, k=_state['smoothness'])
+        return Union(self, other, k=_state.get('smoothness', 0))
 
     def __and__(self, other):
         """Intersection with other node."""
-        return Intersection(self, other, k=_state['smoothness'])
+        return Intersection(self, other, k=_state.get('smoothness', 0))
 
     def __sub__(self, other):
         """Difference with other node."""
@@ -209,7 +209,7 @@ class Intersection(SDFNode):
 
 def grid_eval(sdf, bounds=[(-2,2), (-2,2)], samples=[100j, 100j]):
     """Returns the signed distance values and gradients evaluated at corners of a regular grid."""
-    y, x = np.mgrid[
+    x, y = np.mgrid[
         bounds[0][0]:bounds[0][1]:samples[0], 
         bounds[1][0]:bounds[1][1]:samples[1]
     ]
@@ -235,8 +235,8 @@ class GridSDF:
         self.g = g
         self.xmin = bounds[0][0]
         self.ymin = bounds[1][0]
-        self.xres = x[0, 1] - x[0, 0]
-        self.yres = y[1, 0] - y[0, 0]
+        self.xres = x[1, 0] - x[0, 0]
+        self.yres = y[0, 1] - y[0, 0]
 
     def __call__(self, x, y, compute_gradient=False):
         from scipy.ndimage import map_coordinates
@@ -245,9 +245,9 @@ class GridSDF:
         x = (np.atleast_1d(x) - self.xmin) / self.xres
         y = (np.atleast_1d(y) - self.ymin) / self.yres
 
-        d = map_coordinates(self.d, [y, x], order=1, mode='nearest')
-        gx = map_coordinates(self.g[:,:,0], [y, x], order=1, mode='nearest')
-        gy = map_coordinates(self.g[:,:,1], [y, x], order=1, mode='nearest')
+        d = map_coordinates(self.d, [x, y], order=1, mode='nearest')
+        gx = map_coordinates(self.g[:,:,0], [x, y], order=1, mode='nearest')
+        gy = map_coordinates(self.g[:,:,1], [x, y], order=1, mode='nearest')
         
         return d, np.column_stack((gx, gy))
 
