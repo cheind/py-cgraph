@@ -92,7 +92,7 @@ class ParticleSimulator:
         return dx, dv
 
     #@timeit
-    def update(self):
+    def update(self, use_wall_time=True):
         """Update the simulation.
         
         The ParticleSimulator uses a fixed timestepping scheme.
@@ -102,16 +102,20 @@ class ParticleSimulator:
         greater than the timestep it performs one or more steps.
         """
 
-        new_wall_time = time.time()
-        frame_time = new_wall_time - self.current_wall_time
-        self.current_wall_time = new_wall_time
-        self.tacc += frame_time
+        if use_wall_time:
+            new_wall_time = time.time()
+            frame_time = new_wall_time - self.current_wall_time
+            self.current_wall_time = new_wall_time
+            self.tacc += frame_time
 
-        while self.tacc >= self.dt:
+            while self.tacc >= self.dt:
+                self.advance()
+                self.tacc -= self.dt
+                self.t += self.dt
+        else:
             self.advance()
-            self.tacc -= self.dt
             self.t += self.dt
-    
+                
     
     def advance(self):
         """Advance time by one timestep."""
@@ -140,6 +144,8 @@ class ParticleSimulator:
             # the direction in which the particle is moved to be pushed
             # outside of the object.
 
+            # The gradient should already be close to unit length, but
+            # we normalize here to avoid numeric effects.
             g = g[cids]            
             n = g / np.linalg.norm(g, axis=1)[:, np.newaxis]
 
@@ -236,7 +242,7 @@ def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=
             patch.set_array(np.random.rand(len(actors)))
             patches.append(patch)
 
-        ps.update()        
+        ps.update(use_wall_time=False)        
         patches[0].set_offsets(ps.p['x'])
         return patches
 
@@ -265,7 +271,7 @@ if __name__ == '__main__':
     # Discretize signed distance function using a grid for fast lookup.
     # Note, if the number of samples is too small you might see particles get stuck
     # during narrow places.
-    g = sdf.GridSDF(f, samples=[500j, 500j])
+    g = sdf.GridSDF(f, bounds=[(-4,4), (-2.25,2.25)], samples=[500j, 500j])
 
     #with sdf.smoothness(20):
     #for i in range(10):
@@ -291,17 +297,21 @@ if __name__ == '__main__':
         p['m'] = np.random.uniform(1, 10, size=n)
         p['r'] = p['m'] * 0.01
         p['cr'] = np.full(n, 0.6)
-        p['cf'] = np.full(n, 0.4)
+        p['cf'] = np.full(n, 0.3)
         
         return p
 
     # Create simulation
-    n = 100
-    ps = ParticleSimulator(g, lambda : create_particles(n), timestep=1/60)
+    n = 1000
+    ps = ParticleSimulator(g, lambda : create_particles(n), timestep=1/30)
     ps.force_generators += [gravity]
 
     # Plot result
     fig, ax = plt.subplots()
-    plot_sdf(fig, ax, g, show_quiver=True, show_isolines='zero')
-    anim = create_animation(fig, ax, ps, frames=500)
+    fig.set_size_inches(1280/fig.dpi, 720/fig.dpi)
+    plot_sdf(fig, ax, f, bounds=[(-4,4), (-2.25,2.25)], show_quiver=True, show_isolines='zero')
+    anim = create_animation(fig, ax, ps, bounds=[(-4,4), (-2.25,2.25)], frames=400)
+
+    #anim.save('test.mp4',fps=30, dpi=400)
+    
     plt.show()
