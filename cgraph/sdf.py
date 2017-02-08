@@ -40,7 +40,14 @@ Elements:
 """
 
 def properties(newprops):
-    """Updates the state with the new properties given."""
+    """Updates global state using new properties.
+    
+    This method first saves the old state, then applies
+    the properties to the actual state. Control is handed back
+    to the caller via yield. Finally the old state is reverted.
+
+    Method is assumed to be called from contextmanager objects.
+    """
     global _state        
     try:        
         prev = _state
@@ -51,28 +58,13 @@ def properties(newprops):
 
 @contextmanager
 def smoothness(s):
+    """Controls the smoothness of union and intersection operations."""
     yield from properties({'smoothness':s})
-
-_zeroeps = np.nextafter(0, 1)
-
-
-@cg.wrap_args
-def sym_smax(a, b, k=32):    
-    """Smooth maximum of two SDF expressions `max(a,b)`."""
-    r = cg.sym_exp(k * a) + cg.sym_exp(k * b)
-    return cg.sym_log(cg.sym_max(r, _zeroeps)) / k
-
-@cg.wrap_args
-def sym_smin(a, b, k=32):
-    """Smooth minimum of two SDF expressions `min(a,b)`."""
-    # Note that min(a,b) = -max(-a, -b)
-    # http://math.stackexchange.com/questions/30843/is-there-an-analytic-approximation-to-the-minimum-function
-    r = cg.sym_exp(-k * a) + cg.sym_exp(-k * b)
-    return -cg.sym_log(cg.sym_max(r, _zeroeps)) / k
-
 
 @contextmanager
 def transform(angle=0., offset=[0,0]):
+    """Controls the origin / orientation of newly created items SDF leaves."""
+
     c = np.cos(angle)
     s = np.sin(angle)
     x = _state['x']
@@ -87,6 +79,23 @@ def transform(angle=0., offset=[0,0]):
         -x * s + y * c - (-offset[0] * s + offset[1] * c)
     ]
     yield from properties({'x':e[0], 'y':e[1]})
+
+
+_zeroeps = np.nextafter(0, 1)
+
+@cg.wrap_args
+def sym_smax(a, b, k=32):    
+    """Smooth maximum of two SDF expressions `max(a,b)`."""
+    r = cg.sym_exp(k * a) + cg.sym_exp(k * b)
+    return cg.sym_log(cg.sym_max(r, _zeroeps)) / k
+
+@cg.wrap_args
+def sym_smin(a, b, k=32):
+    """Smooth minimum of two SDF expressions `min(a,b)`."""
+    # Note that min(a,b) = -max(-a, -b)
+    # http://math.stackexchange.com/questions/30843/is-there-an-analytic-approximation-to-the-minimum-function
+    r = cg.sym_exp(-k * a) + cg.sym_exp(-k * b)
+    return -cg.sym_log(cg.sym_max(r, _zeroeps)) / k
 
 class SDFNode:
     """Base class for nodes in an SDF expression.
@@ -133,24 +142,41 @@ class Circle(SDFNode):
         sdf = cg.sym_sqrt((center[0] - _state['x'])**2 + (center[1] - _state['y'])**2) - radius
         super(Circle, self).__init__(sdf)
 
-class Line(SDFNode):
-    """Represents the SDF of an infinite line in 2D.
+class Halfspace(SDFNode):
+    """Represents the SDF of an infinite half-space in 2D.
 
-    The line is parametrized by its normal vector and distance from origin
-    along the normal direction.
+    The half-space is parametrized in Hessian normal form by its 
+    normal vector and distance from origin.
     """
 
     def __init__(self, normal=[1,0], d=0):
         n =  normal / np.linalg.norm(normal)
         sdf = n[0] * _state['x'] + n[1] * _state['y'] - d
         
-        super(Line, self).__init__(sdf)
+        super(Halfspace, self).__init__(sdf)
+
+class Box(SDFNode):
+    """Represents the SDF of a axis aligned rectangle.
+
+    The box is parametrized by a minimum and maximum corner.
+    """
+
+    def __init__(self, minc=[-1,-1], maxc=[1,1]):
+
+        bottom = Halfspace(normal=[0,-1], d=np.dot([0,-1], minc))
+        right = Halfspace(normal=[1, 0], d=np.dot([1, 0], maxc))
+        top = Halfspace(normal=[0, 1], d=np.dot([0, 1], maxc))
+        left = Halfspace(normal=[-1, 0], d=np.dot([-1, 0], minc))
+
+        box = bottom & right & top & left
+
+        super(Box, self).__init__(box.sdf)
+
 
 class Union(SDFNode):
     """Represents the union of two SDFs.
 
-    Based on the parameter `k` the union is either peformed
-    smoothly or hard.
+    Based on the parameter `k` the union is either peformed smoothly or hard.
     """
     def __init__(self, left, right, k=None):
         if k:
@@ -161,17 +187,16 @@ class Union(SDFNode):
         super(Union, self).__init__(sdf)
 
 class Difference(SDFNode):
-    """Represents the the difference between two SDFs."""
+    """The difference between two SDFs."""
 
     def __init__(self, left, right):
         sdf = cg.sym_max(left.sdf, -right.sdf)
         super(Difference, self).__init__(sdf)
 
 class Intersection(SDFNode):
-    """Represents the the intersection between two SDFs.
+    """The intersection of two SDFs.
 
-    Based on the parameter `k` the union is either peformed
-    smoothly or hard.
+    Based on the parameter `k` the union is either peformed smoothly or hard.
     """
     
     def __init__(self, left, right, k=None):
