@@ -129,7 +129,7 @@ class ParticleSimulator:
 
         # Since our particles are little circles we need to account for
         # their radius
-        d -= self.p['r'] 
+        d -= self.p['r']
 
         # The particles in collision are those whose signed distance is 
         # equal to or less than 0
@@ -140,7 +140,7 @@ class ParticleSimulator:
             # the direction in which the particle is moved to be pushed
             # outside of the object.
 
-            g = g[cids]
+            g = g[cids]            
             n = g / np.linalg.norm(g, axis=1)[:, np.newaxis]
 
             # Shortcuts
@@ -257,7 +257,15 @@ if __name__ == '__main__':
     with sdf.smoothness(10):
         f |= sdf.Circle(center=[0, 0.0], radius=0.5) & sdf.Halfspace(normal=[0.1, 1], d=0.3)
 
-    g = sdf.GridSDF(f, samples=[100j, 100j])
+    # Some random boxes
+    #for i in range(10):
+    #    with sdf.transform(angle=np.random.uniform(-0.8, 0.8), offset=np.random.uniform(-2, 2, size=2)):
+    #        f |= sdf.Box(minc=np.random.uniform(-0.3, -0.1, size=2), maxc=np.random.uniform(0.1, 0.3, size=2))
+        
+    # Discretize signed distance function using a grid for fast lookup.
+    # Note, if the number of samples is too small you might see particles get stuck
+    # during narrow places.
+    g = sdf.GridSDF(f, samples=[500j, 500j])
 
     #with sdf.smoothness(20):
     #for i in range(10):
@@ -278,7 +286,7 @@ if __name__ == '__main__':
 
         p = {}
         p['n'] = n
-        p['x'] = np.random.multivariate_normal([0, 1], [[0.05, 0],[0, 0.05]], n)
+        p['x'] = np.random.multivariate_normal([0, 1.5], [[0.05, 0],[0, 0.05]], n)
         p['v'] = np.random.multivariate_normal([0, 0], [[0.1, 0],[0, 0.1]], n)
         p['m'] = np.random.uniform(1, 10, size=n)
         p['r'] = p['m'] * 0.01
@@ -294,6 +302,6 @@ if __name__ == '__main__':
 
     # Plot result
     fig, ax = plt.subplots()
-    plot_sdf(fig, ax, f, show_quiver=True, show_isolines='zero')
+    plot_sdf(fig, ax, g, show_quiver=True, show_isolines='zero')
     anim = create_animation(fig, ax, ps, frames=500)
     plt.show()
