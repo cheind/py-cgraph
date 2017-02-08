@@ -1,11 +1,8 @@
 
-import pytest
-import math
-
 from cgraph.test.utils import checkf
 
 import cgraph as cg
-import sdf
+import cgraph.sdf as sdf
 
 def test_circle():
     x = cg.Symbol('x')

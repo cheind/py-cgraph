@@ -17,3 +17,6 @@ Christoph Heindl, 2017
 """
 
 from .cgraph import *
+
+# Needs to be last line
+__version__ = '1.0.0'
