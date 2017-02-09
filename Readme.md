@@ -12,7 +12,7 @@ The code is accompanied by a series of notebooks that explain fundamental concep
 
 **Applications**
 - Function Optimization [view][3]
-- Signed Distance Functions and Particle Physics [view][4]
+- Signed Distance Functions and Particle Physics [view][5]
 
 There are certainly plenty of typos, grammatical errors and all kind of improvements possible. In case you have one for me, I'd be happy to see your pull requests or comments!
 
@@ -46,10 +46,9 @@ cg.simplify(ddx[y]) # ddf/dxdy
 # (1/(z - 2))
 ```
 
-For a more complete example see [example_optimize.py](example_optimize.py)
-
 [1]: docs/00_Computational_Graphs-Introduction.ipynb
 [2]: docs/01_Computational_Graphs-Symbolic_Computation.ipynb
 [3]: docs/02_Computational_Graphs-Function_Optimization.ipynb
 [4]: docs/03_Computational_Graphs-Signed_Distance_Functions_and_Particle_Physics.ipynb
+[5]: http://nbviewer.jupyter.org/github/cheind/py-cgraph/blob/feature%2Fsdf_base/docs/03_Computational_Graphs-Signed_Distance_Functions_and_Particle_Physics.ipynb
 [cgraph.py]: cgraph/cgraph.py
