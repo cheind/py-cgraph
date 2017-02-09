@@ -108,6 +108,11 @@ class Symbol(Node):
     def symbolic_gradient(self):
         return []
 
+def toscalar(v):
+    """Converts v to scalar if shape is (1,)."""
+    return np.asscalar(v) if isinstance(v, np.ndarray) and v.shape == (1,) else v
+
+
 class Constant(Node):
     """Represents a constant value in an expression tree."""
 
@@ -116,7 +121,7 @@ class Constant(Node):
         self.value = np.atleast_1d(value)
 
     def __str__(self):
-        return str(self.value)
+        return str(toscalar(self.value))
 
     def compute_value(self, values):
         return self.value
