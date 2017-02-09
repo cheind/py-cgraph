@@ -15,12 +15,7 @@ def timeit(f):
         return ret
     return wrap
 
-def explicit_euler(x, v, dx, dv, t, dt):
-    """Evolve in ODE in time by performing a single explicit euler step."""
-    
-    return x + dx * dt, v + dv * dt
-
-class ParticleSimulator:
+class ParticleSimulation:
     """Particle based physics in 2D.
     
     ParticleSimulator takes a callable `particle_creator` and a signed 
@@ -48,25 +43,45 @@ class ParticleSimulator:
     
     """
 
-    def __init__(self, f, particle_creator, timestep=1/30):
+    def __init__(self, f, n=100, timestep=1/30):
 
         self.p = None        
         self.dt = timestep
+        self.n = n
         
         self.sdf = f
-        self.particle_creator = particle_creator
         self.force_generators = []
-        self.integrator = explicit_euler       
+        self.collection = None
         
-    def reset(self):
+    def reset(self, ax):
         """Reset simulation."""
 
-        self.p = self.particle_creator()
+        self.p = self.create_particles()
         self.p['f'] = np.zeros((self.p['n'], 2))
+
+        if self.collection:
+            self.collection.remove()
+
+        actors = [plt.Circle((0,0), radius=self.p['r'][i]) for i in range(self.n)]        
+        self.collection = ax.add_artist(PatchCollection(actors, offset_position='data', alpha=0.6, zorder=10))
+        self.collection.set_array(np.random.rand(len(actors)))
 
         self.t = 0        
         self.tacc = 0.
-        self.current_wall_time = time.time()      
+        self.current_wall_time = time.time()
+
+    def create_particles(self):
+        p = {}
+        
+        p['n'] = self.n
+        p['x'] = np.random.multivariate_normal([0, 1.5], [[0.05, 0],[0, 0.05]], n)
+        p['v'] = np.random.multivariate_normal([0, 0], [[0.1, 0],[0, 0.1]], n)
+        p['m'] = np.random.uniform(1, 10, size=self.n)
+        p['r'] = p['m'] * 0.01
+        p['cr'] = np.full(n, 0.6)
+        p['cf'] = np.full(n, 0.3)
+
+        return p
 
     def forces(self):
         """Compute net force for each particle."""
@@ -91,8 +106,14 @@ class ParticleSimulator:
 
         return dx, dv
 
+    def integrate(self, x, v, dx, dv, t, dt):
+        """Evolve in ODE in time by performing a single explicit euler step."""
+    
+        return x + dx * dt, v + dv * dt
+
+
     #@timeit
-    def update(self, use_wall_time=True):
+    def update(self, ax, use_wall_time=True):
         """Update the simulation.
         
         The ParticleSimulator uses a fixed timestepping scheme.
@@ -115,6 +136,9 @@ class ParticleSimulator:
         else:
             self.advance()
             self.t += self.dt
+
+        self.collection.set_offsets(self.p['x'])
+        return self.collection,
                 
     
     def advance(self):
@@ -125,7 +149,7 @@ class ParticleSimulator:
         vcur = self.p['v']
 
         dx, dv = self.dynamics()
-        xnew, vnew = self.integrator(xcur, vcur, dx, dv, self.t, self.dt)
+        xnew, vnew = self.integrate(xcur, vcur, dx, dv, self.t, self.dt)
         
         # For collision test we query the signed distance function at the 
         # positions t + dt
@@ -171,14 +195,13 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 from matplotlib.collections import PatchCollection
 
-def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=1/30, repeat=True, use_wall_time=True):
+def create_animation(fig, ax, simulation, bounds=[(-2,2), (-2,2)], frames=500, timestep=1/30, repeat=True, use_wall_time=True):
     """Create a matplotlib animation involving a particle simulation."""
 
     state = {}
 
     def init_anim():
         sdf.setup_plot_axes(ax, bounds)      
-        ps.reset()
         state['reset'] = True                        
         return []
 
@@ -188,20 +211,11 @@ def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=
             # of all circles at (0,0) when calling the same method inside init_anim. Also, we need a
             # new circle collection when an animation repeats, because radii of circles might have 
             # changed during ps.reset()            
-            if 'patches' in state:
-                state['patches'].remove()
-                del state['patches']
-
-            actors = [plt.Circle((0,0), radius=ps.p['r'][i]) for i in range(ps.p['n'])]        
-            patch = ax.add_artist(PatchCollection(actors, offset_position='data', alpha=0.6, zorder=10))
-            patch.set_array(np.random.rand(len(actors)))
-            state['patches'] = patch
+            simulation.reset(ax)
             del state['reset']
 
-        ps.update(use_wall_time=use_wall_time)        
-        state['patches'].set_offsets(ps.p['x'])
-        return state['patches'], 
-
+        return simulation.update(ax, use_wall_time=use_wall_time)
+        
     anim = animation.FuncAnimation(
         fig, 
         update_anim,  
@@ -213,26 +227,16 @@ def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=
 
     return anim
 
-if __name__ == '__main__':
-
-    
+if __name__ == '__main__':  
 
     f = sdf.Halfspace(normal=[0, 1], d=-1.8) | sdf.Halfspace(normal=[1, 1], d=-1.8) | sdf.Halfspace(normal=[-1, 1], d=-1.8)
     with sdf.smoothness(10):
         f |= sdf.Circle(center=[0, 0.0], radius=0.5) & sdf.Halfspace(normal=[0.1, 1], d=0.3)
 
-    with sdf.transform(angle=-0.3, offset=[-1, -0.5]):
-        f |= sdf.Box(minc=[-0.2,-0.2], maxc=[0.2,0.1])
-
     # Some random boxes
     #for i in range(10):
     #    with sdf.transform(angle=np.random.uniform(-0.8, 0.8), offset=np.random.uniform(-2, 2, size=2)):
-    #        f |= sdf.Box(minc=np.random.uniform(-0.3, -0.1, size=2), maxc=np.random.uniform(0.1, 0.3, size=2))
-        
-    # Discretize signed distance function using a grid for fast lookup.
-    # Note, if the number of samples is too small you might see particles get stuck
-    # during narrow places.
-    
+    #        f |= sdf.Box(minc=np.random.uniform(-0.3, -0.1, size=2), maxc=np.random.uniform(0.1, 0.3, size=2))    
 
     #with sdf.smoothness(20):
     #for i in range(10):
@@ -248,26 +252,15 @@ if __name__ == '__main__':
         d, g = f(p['x'][:, 0], p['x'][:, 1], compute_gradient=True)
         return g * p['m'][:, np.newaxis]
 
-    def create_particles(n):
-        """Particle creator with some randomness."""
-
-        p = {}
-        p['n'] = n
-        p['x'] = np.random.multivariate_normal([0, 1.5], [[0.05, 0],[0, 0.05]], n)
-        p['v'] = np.random.multivariate_normal([0, 0], [[0.1, 0],[0, 0.1]], n)
-        p['m'] = np.random.uniform(1, 10, size=n)
-        p['r'] = p['m'] * 0.01
-        p['cr'] = np.full(n, 0.6)
-        p['cf'] = np.full(n, 0.3)
-        
-        return p
-
+    # Discretize signed distance function using a grid for fast lookup.
+    # Note, if the number of samples is too small you might see particles get stuck
+    # during narrow places.
     bounds=[(-2,2), (-2,2)]
     g = sdf.GridSDF(f, bounds=bounds, samples=[200j, 200j])
 
     # Create simulation
     n = 100
-    ps = ParticleSimulator(g, lambda : create_particles(n), timestep=1/60)
+    ps = ParticleSimulation(g, n=n, timestep=1/60)
     #ps.force_generators += [gravity, lambda p, t: grad(p, t, g)]
     ps.force_generators += [gravity]
 
