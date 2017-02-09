@@ -49,3 +49,4 @@ Temporary Items
 .cache/v/cache/lastfailed
 .ipynb_checkpoints
 docs/debug.log
+*.egg-info/

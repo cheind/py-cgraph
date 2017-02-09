@@ -6,13 +6,18 @@ functions factored as expression trees. With the right concepts at hands a few l
 
 The code is accompanied by a series of notebooks that explain fundamental concepts and hints for developing your own library that performs symbolic computation:
 
-- [00 Computational Graphs - Introduction](docs/00_Computational_Graphs-Introduction.ipynb)
-- [01 Computational Graphs - Symbolic Computation](docs/01_Computational_Graphs-Symbolic_Computation.ipynb)
-- [02 Computational Graphs - Function Optimization](docs/02_Computational_Graphs-Function_Optimization.ipynb)
+**Foundations**
+- Computational Graphs - Introduction [view][1]
+- Computational Graphs - Symbolic Computation in Python [view][2]
 
-There are certainly plenty of typos, grammatical errors and all kind of improvements possible. In case you have one for me, I'd be happy to see your pull requests or comments!
+**Applications**
+- Function Optimization [view][3]
+- Signed Distance Functions and Particle Physics [view][4]
 
-The code for symbolic computation contained in [cgraph.py](cgraph.py) can be used as follows.
+All notebook sources can be found inside the [docs][docs] folder. There are certainly plenty of typos, grammatical errors and all kind of improvements possible. In case you have one for me, I'd be happy to see your pull requests or comments!
+
+### Usage
+The code for symbolic computation contained in [cgraph.py][cgraph.py] can be used as follows.
 
 ```python
 import cgraph as cg
@@ -42,4 +47,20 @@ cg.simplify(ddx[y]) # ddf/dxdy
 # (1/(z - 2))
 ```
 
-For a more complete example see [example_optimize.py](example_optimize.py)
+### Installation
+To install CGraph clone this repository and use `pip` as follows
+
+```
+pip install -e <path/to/setup.py>
+```
+
+### License
+If not otherwise stated all Material is licensed under BSD license.
+
+[1]: https://cdn.rawgit.com/cheind/py-cgraph/feature/sdf_base/docs/00_Computational_Graphs-Introduction.html
+[2]: https://cdn.rawgit.com/cheind/py-cgraph/feature/sdf_base/docs/01_Computational_Graphs-Symbolic_Computation.html
+[3]: https://cdn.rawgit.com/cheind/py-cgraph/feature/sdf_base/docs/02_Computational_Graphs-Function_Optimization.html
+[4]: https://cdn.rawgit.com/cheind/py-cgraph/feature/sdf_base/docs/03_Computational_Graphs-Signed_Distance_Functions_and_Particle_Physics.html
+
+[cgraph.py]: cgraph/cgraph.py
+[docs]: docs/
