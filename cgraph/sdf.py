@@ -97,7 +97,7 @@ def sym_smin(a, b, k=32):
     r = cg.sym_exp(-k * a) + cg.sym_exp(-k * b)
     return -cg.sym_log(cg.sym_max(r, _zeroeps)) / k
 
-class SDFNode:
+class SDF(cg.Function):
     """Base class for nodes in an SDF expression.
 
     While hierarchies of SDFNodes are similar to CGraph expression trees but are not
@@ -107,22 +107,13 @@ class SDFNode:
     expressions involving SDFs. For example the intersection of circle and a line
     can be written as
 
-        s = sdf.Circle(center=[0, -0.8], radius=0.5) & sdf.Line(normal=[0.1, 1], d=-0.5)
+        s = sdf.Circle(center=[0, -0.8], radius=0.5) & sdf.Halfspace(normal=[0.1, 1], d=-0.5)
     """
 
     def __init__(self, sdf):
-        """Inititialize with sdf expression."""
         self.sdf = sdf
-        self.F = None
+        super(SDF, self).__init__(sdf, [cg.Symbol('x'), cg.Symbol('y')])
         
-    def __call__(self, x, y, compute_gradient=False):
-        """Returns the signed distances for all pairs of x,y coordinates."""
-
-        if self.F is None: # Lazy construction
-            self.F = cg.Function(self.sdf, [_state['x'], _state['y']])
-
-        return self.F(x, y, compute_gradient=compute_gradient)
-
     def __or__(self, other):
         """Union with other node."""
         return Union(self, other, k=_state.get('smoothness', 0))
@@ -135,14 +126,14 @@ class SDFNode:
         """Difference with other node."""
         return Difference(self, other)    
 
-class Circle(SDFNode):
+class Circle(SDF):
     """Represents the SDF of a circle in 2D."""
 
     def __init__(self, center=[0,0], radius=1):
         sdf = cg.sym_sqrt((center[0] - _state['x'])**2 + (center[1] - _state['y'])**2) - radius
         super(Circle, self).__init__(sdf)
 
-class Halfspace(SDFNode):
+class Halfspace(SDF):
     """Represents the SDF of an infinite half-space in 2D.
 
     The half-space is parametrized in Hessian normal form by its 
@@ -155,7 +146,7 @@ class Halfspace(SDFNode):
         
         super(Halfspace, self).__init__(sdf)
 
-class Box(SDFNode):
+class Box(SDF):
     """Represents the SDF of a axis aligned rectangle.
 
     The box is parametrized by a minimum and maximum corner.
@@ -173,7 +164,7 @@ class Box(SDFNode):
         super(Box, self).__init__(box.sdf)
 
 
-class Union(SDFNode):
+class Union(SDF):
     """Represents the union of two SDFs.
 
     Based on the parameter `k` the union is either peformed smoothly or hard.
@@ -186,14 +177,14 @@ class Union(SDFNode):
         
         super(Union, self).__init__(sdf)
 
-class Difference(SDFNode):
+class Difference(SDF):
     """The difference between two SDFs."""
 
     def __init__(self, left, right):
         sdf = cg.sym_max(left.sdf, -right.sdf)
         super(Difference, self).__init__(sdf)
 
-class Intersection(SDFNode):
+class Intersection(SDF):
     """The intersection of two SDFs.
 
     Based on the parameter `k` the union is either peformed smoothly or hard.
