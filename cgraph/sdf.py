@@ -261,7 +261,7 @@ def setup_plot_axes(ax, bounds=[(-2,2), (-2,2)]):
         labelright='off',
     )
 
-def plot_sdf(fig, ax, f, bounds=[(-2,2), (-2,2)], show_quiver=True, show_isolines='all'):
+def plot_sdf(fig, ax, f, bounds=[(-2,2), (-2,2)], show_quiver=True, show_isolines='all', show_isolabels=False):
     """Plot a signed distance function.
 
     This function plots the contours of the signed distance function within user given bounds.
@@ -279,6 +279,9 @@ def plot_sdf(fig, ax, f, bounds=[(-2,2), (-2,2)], show_quiver=True, show_isoline
             ret['contour'] = ax.contour(x, y, d)
         elif show_isolines == 'zero':
             ret['contour'] = ax.contour(x, y, d, levels=[0])       
+
+        if show_isolabels:
+            ax.clabel(ret['contour'])
 
         if show_quiver:
             dx = g[:,:,0]
