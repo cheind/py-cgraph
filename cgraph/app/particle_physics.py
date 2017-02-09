@@ -174,31 +174,33 @@ from matplotlib.collections import PatchCollection
 def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=1/30, repeat=True, use_wall_time=True):
     """Create a matplotlib animation involving a particle simulation."""
 
-    patches = []
+    state = {}
 
     def init_anim():
         sdf.setup_plot_axes(ax, bounds)      
         ps.reset()
+        state['reset'] = True                        
         return []
 
     def update_anim(i):
-        if i == 0:
+        if 'reset' in state:
             # We initialize the circles in here. It seems like matplotlib keeps a static image
             # of all circles at (0,0) when calling the same method inside init_anim. Also, we need a
             # new circle collection when an animation repeats, because radii of circles might have 
             # changed during ps.reset()            
-            if len(patches) > 0:
-                patches[0].remove()
-                patches.pop()
+            if 'patches' in state:
+                state['patches'].remove()
+                del state['patches']
 
             actors = [plt.Circle((0,0), radius=ps.p['r'][i]) for i in range(ps.p['n'])]        
             patch = ax.add_artist(PatchCollection(actors, offset_position='data', alpha=0.6, zorder=10))
             patch.set_array(np.random.rand(len(actors)))
-            patches.append(patch)
+            state['patches'] = patch
+            del state['reset']
 
         ps.update(use_wall_time=use_wall_time)        
-        patches[0].set_offsets(ps.p['x'])
-        return patches
+        state['patches'].set_offsets(ps.p['x'])
+        return state['patches'], 
 
     anim = animation.FuncAnimation(
         fig, 
@@ -212,10 +214,15 @@ def create_animation(fig, ax, ps, bounds=[(-2,2), (-2,2)], frames=500, timestep=
     return anim
 
 if __name__ == '__main__':
-    f = sdf.Halfspace(normal=[0, 1], d=-1.8) | sdf.Halfspace(normal=[1, 1], d=-1.8) | sdf.Halfspace(normal=[-1, 1], d=-1.8)
 
+    
+
+    f = sdf.Halfspace(normal=[0, 1], d=-1.8) | sdf.Halfspace(normal=[1, 1], d=-1.8) | sdf.Halfspace(normal=[-1, 1], d=-1.8)
     with sdf.smoothness(10):
         f |= sdf.Circle(center=[0, 0.0], radius=0.5) & sdf.Halfspace(normal=[0.1, 1], d=0.3)
+
+    with sdf.transform(angle=-0.3, offset=[-1, -0.5]):
+        f |= sdf.Box(minc=[-0.2,-0.2], maxc=[0.2,0.1])
 
     # Some random boxes
     #for i in range(10):
@@ -225,7 +232,7 @@ if __name__ == '__main__':
     # Discretize signed distance function using a grid for fast lookup.
     # Note, if the number of samples is too small you might see particles get stuck
     # during narrow places.
-    g = sdf.GridSDF(f, bounds=[(-4,4), (-2.25,2.25)], samples=[500j, 500j])
+    
 
     #with sdf.smoothness(20):
     #for i in range(10):
@@ -236,7 +243,7 @@ if __name__ == '__main__':
         """Close to planet surface gravity."""
         return p['m'][:, np.newaxis] * np.array([0, -1]) 
 
-    def grad(p, t, f=g):
+    def grad(p, t, f):
         """Force field along gradients."""
         d, g = f(p['x'][:, 0], p['x'][:, 1], compute_gradient=True)
         return g * p['m'][:, np.newaxis]
@@ -255,16 +262,20 @@ if __name__ == '__main__':
         
         return p
 
+    bounds=[(-2,2), (-2,2)]
+    g = sdf.GridSDF(f, bounds=bounds, samples=[200j, 200j])
+
     # Create simulation
-    n = 1000
-    ps = ParticleSimulator(g, lambda : create_particles(n), timestep=1/30)
+    n = 100
+    ps = ParticleSimulator(g, lambda : create_particles(n), timestep=1/60)
+    #ps.force_generators += [gravity, lambda p, t: grad(p, t, g)]
     ps.force_generators += [gravity]
 
     # Plot result
     fig, ax = plt.subplots()
     fig.set_size_inches(1280/fig.dpi, 720/fig.dpi)
-    sdf.plot_sdf(fig, ax, f, bounds=[(-4,4), (-2.25,2.25)], show_quiver=True, show_isolines='zero')
-    anim = create_animation(fig, ax, ps, bounds=[(-4,4), (-2.25,2.25)], frames=400)
+    sdf.plot_sdf(fig, ax, g, bounds=bounds, show_quiver=True, show_isolines='zero')
+    anim = create_animation(fig, ax, ps, bounds=bounds, frames=400)
 
     #anim.save('test.mp4',fps=30, dpi=400)
     
