@@ -57,10 +57,10 @@ pip install -e <path/to/setup.py>
 ### License
 If not otherwise stated all Material is licensed under BSD license.
 
-[1]: https://cdn.rawgit.com/cheind/py-cgraph/feature/sdf_base/docs/00_Computational_Graphs-Introduction.html
-[2]: https://cdn.rawgit.com/cheind/py-cgraph/feature/sdf_base/docs/01_Computational_Graphs-Symbolic_Computation.html
-[3]: https://cdn.rawgit.com/cheind/py-cgraph/feature/sdf_base/docs/02_Computational_Graphs-Function_Optimization.html
-[4]: https://cdn.rawgit.com/cheind/py-cgraph/feature/sdf_base/docs/03_Computational_Graphs-Signed_Distance_Functions_and_Particle_Physics.html
+[1]: https://cdn.rawgit.com/cheind/py-cgraph/master/docs/00_Computational_Graphs-Introduction.html
+[2]: https://cdn.rawgit.com/cheind/py-cgraph/master/docs/01_Computational_Graphs-Symbolic_Computation.html
+[3]: https://cdn.rawgit.com/cheind/py-cgraph/master/docs/02_Computational_Graphs-Function_Optimization.html
+[4]: https://cdn.rawgit.com/cheind/py-cgraph/master/docs/03_Computational_Graphs-Signed_Distance_Functions_and_Particle_Physics.html
 
 [cgraph.py]: cgraph/cgraph.py
 [docs]: docs/
