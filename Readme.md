@@ -12,10 +12,11 @@ The code is accompanied by a series of notebooks that explain fundamental concep
 
 **Applications**
 - Function Optimization [view][3]
-- Signed Distance Functions and Particle Physics [view][5]
+- Signed Distance Functions and Particle Physics [view][4]
 
-There are certainly plenty of typos, grammatical errors and all kind of improvements possible. In case you have one for me, I'd be happy to see your pull requests or comments!
+All notebook sources can be found inside the [docs][docs] folder. There are certainly plenty of typos, grammatical errors and all kind of improvements possible. In case you have one for me, I'd be happy to see your pull requests or comments!
 
+### Usage
 The code for symbolic computation contained in [cgraph.py][cgraph.py] can be used as follows.
 
 ```python
@@ -46,9 +47,20 @@ cg.simplify(ddx[y]) # ddf/dxdy
 # (1/(z - 2))
 ```
 
-[1]: docs/00_Computational_Graphs-Introduction.ipynb
-[2]: docs/01_Computational_Graphs-Symbolic_Computation.ipynb
-[3]: docs/02_Computational_Graphs-Function_Optimization.ipynb
-[4]: docs/03_Computational_Graphs-Signed_Distance_Functions_and_Particle_Physics.ipynb
-[5]: http://nbviewer.jupyter.org/github/cheind/py-cgraph/blob/feature%2Fsdf_base/docs/03_Computational_Graphs-Signed_Distance_Functions_and_Particle_Physics.ipynb
+### Installation
+To install CGraph clone this repository and use `pip` as follows
+
+```
+pip install -e <path/to/setup.py>
+```
+
+### License
+If not otherwise stated all Material is licensed under BSD license.
+
+[1]: https://cdn.rawgit.com/cheind/py-cgraph/feature/sdf_base/docs/00_Computational_Graphs-Introduction.html
+[2]: https://cdn.rawgit.com/cheind/py-cgraph/feature/sdf_base/docs/01_Computational_Graphs-Symbolic_Computation.html
+[3]: https://cdn.rawgit.com/cheind/py-cgraph/feature/sdf_base/docs/02_Computational_Graphs-Function_Optimization.html
+[4]: https://cdn.rawgit.com/cheind/py-cgraph/feature/sdf_base/docs/03_Computational_Graphs-Signed_Distance_Functions_and_Particle_Physics.html
+
 [cgraph.py]: cgraph/cgraph.py
+[docs]: docs/
