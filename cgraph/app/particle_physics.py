@@ -74,12 +74,12 @@ class ParticleSimulation:
         p = {}
         
         p['n'] = self.n
-        p['x'] = np.random.multivariate_normal([0, 1.5], [[0.05, 0],[0, 0.05]], n)
-        p['v'] = np.random.multivariate_normal([0, 0], [[0.1, 0],[0, 0.1]], n)
+        p['x'] = np.random.multivariate_normal([0, 1.5], [[0.05, 0],[0, 0.05]], self.n)
+        p['v'] = np.random.multivariate_normal([0, 0], [[0.1, 0],[0, 0.1]], self.n)
         p['m'] = np.random.uniform(1, 10, size=self.n)
         p['r'] = p['m'] * 0.01
-        p['cr'] = np.full(n, 0.6)
-        p['cf'] = np.full(n, 0.3)
+        p['cr'] = np.full(self.n, 0.6)
+        p['cf'] = np.full(self.n, 0.3)
 
         return p
 
@@ -266,7 +266,6 @@ if __name__ == '__main__':
 
     # Plot result
     fig, ax = plt.subplots()
-    fig.set_size_inches(1280/fig.dpi, 720/fig.dpi)
     sdf.plot_sdf(fig, ax, g, bounds=bounds, show_quiver=True, show_isolines='zero')
     anim = create_animation(fig, ax, ps, bounds=bounds, frames=400)
 
