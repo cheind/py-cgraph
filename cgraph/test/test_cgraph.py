@@ -1,34 +1,26 @@
+"""CGraph - symbolic computation in Python library.
 
-import pytest
+This library is the result of my efforts to understand symbolic computation of
+functions factored as expression trees. In a few lines of code it shows how to
+forward evaluate functions and how to perform numeric and symbolic derivatives
+computations using backpropagation.
+
+While this library is not complete (and will never be) it offers the interested
+reader some insights on one way in which symbolic computation can be performed.
+
+The code is accompanied by a series of notebooks that explain the fundamental
+concepts. You can find these notebooks online at
+
+    https://github.com/cheind/py-cgraph
+
+Christoph Heindl, 2017
+"""
+
 import math
-from pytest import approx
+import numpy as np
 
+from cgraph.test.utils import checkf
 import cgraph as cg
-
-def checkf(f, fargs, value=None, ngrad=None):
-    __tracebackhide__ = True
-   
-    v = cg.value(f, fargs)
-    if value != approx(v):
-        pytest.fail("""Function VALUE check failed
-        f: {}
-        expected value of {} - received {}""".format(f, value, v))
-
-    ng = cg.numeric_gradient(f, fargs)
-    sg = cg.symbolic_gradient(f)
-
-    for k in fargs.keys():
-        if ngrad[k] != approx(ng[k]):
-            pytest.fail("""Function NUMERIC GRAD check failed
-            f: {}, 
-            df/d{}
-            expected value of {} - received {}""".format(f, k, ngrad[k], ng[k]))
-
-        if ngrad[k] != approx(cg.value(sg[k], fargs)):
-            pytest.fail("""Function SYMBOLIC GRAD check failed
-            f: {}, 
-            df/d{}: {},
-            expected value of {} - received {}""".format(f, k, sg[k], ngrad[k], cg.value(sg[k], fargs)))
 
 def complexity(f):
     count = 0
@@ -43,6 +35,7 @@ def test_add():
 
     f = x + y
     checkf(f, {x:2, y:3}, value=5, ngrad={x: 1, y:1})
+    checkf(f, {x:[2,3], y:[4,5]}, value=[6,8], ngrad={x:[1, 1], y:[1, 1]})
 
 def test_sub():
     x = cg.Symbol('x')
@@ -50,6 +43,7 @@ def test_sub():
 
     f = x - y
     checkf(f, {x:2, y:3}, value=-1, ngrad={x: 1, y:-1})
+    checkf(f, {x:[2,3], y:[4,5]}, value=[-2,-2], ngrad={x:[1, 1], y:[-1, -1]})
 
 def test_mul():
     x = cg.Symbol('x')
@@ -91,12 +85,51 @@ def test_pow():
     f = (x * 2 + y)**2
     checkf(f, {x:2, y:3}, value=7**2, ngrad={x: 2*7*2, y:2*7*1})
 
+def test_exp():
+    x = cg.Symbol('x')
+    
+    f = cg.sym_exp(x)
+    checkf(f, {x:2}, value=math.exp(2), ngrad={x: math.exp(2)})
+    checkf(f, {x:[1,0]}, value=[math.exp(1), math.exp(0)], ngrad={x: [math.exp(1), math.exp(0)]})
+
 def test_sum():
     x = cg.Symbol('x')
     y = cg.Symbol('y')
 
     f = cg.sym_sum([x, y, x, y])
     checkf(f, {x:2, y:3}, value=10, ngrad={x: 2, y:2})
+
+def test_sqrt():
+    x = cg.Symbol('x')
+    
+    f = cg.sym_sqrt(x)
+    checkf(f, {x:4}, value=2, ngrad={x: 0.25})
+
+def test_min():
+    x = cg.Symbol('x')
+    y = cg.Symbol('y')
+
+    f = cg.sym_min(x, y)
+    checkf(f, {x:2, y:1}, value=1, ngrad={x:0, y:1}, with_sgrad=False)
+
+def test_max():
+    x = cg.Symbol('x')
+    y = cg.Symbol('y')
+
+    f = cg.sym_max(x, y)
+    checkf(f, {x:2, y:1}, value=2, ngrad={x:1, y:0}, with_sgrad=False)
+
+def test_sin():
+    x = cg.Symbol('x')
+
+    f = cg.sym_sin(x)
+    checkf(f, {x:2}, value=math.sin(2), ngrad={x:math.cos(2)})
+
+def test_cos():
+    x = cg.Symbol('x')
+
+    f = cg.sym_cos(x)
+    checkf(f, {x:2}, value=math.cos(2), ngrad={x:-math.sin(2)})
 
 def test_reuse_of_expr():
     x = cg.Symbol('x')
@@ -147,5 +180,18 @@ def test_complex_expr():
             z:-0.64010571103387
         })
 
+def test_function():
+    x = cg.Symbol('x')
+    y = cg.Symbol('y')
 
+    e = (x * y + 3)
+    f = cg.Function(e, [x, y])
+
+    assert np.isclose(f(2, 1), 5)
+    assert all(np.isclose(f([2,3], [1,2]), [5, 9]))
+
+    v, g = f([2,3], [1,2], compute_gradient=True)
+    assert all(np.isclose(v, [5, 9]))
+    assert all(np.isclose(g[0], [1, 2]))
+    assert all(np.isclose(g[1], [2, 3]))
 
