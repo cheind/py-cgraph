@@ -53,6 +53,13 @@ To install CGraph clone this repository and use `pip` to install
 pip install -e <path/to/setup.py>
 ```
 
+### Continuous Integration
+
+Branch  | Status
+------- | ------
+master  | ![](https://travis-ci.org/cheind/py-cgraph.svg?branch=master)
+develop | ![](https://travis-ci.org/cheind/py-cgraph.svg?branch=develop)
+
 ### License
 If not otherwise stated all Material is licensed under BSD license.
 
