@@ -19,4 +19,4 @@ Christoph Heindl, 2017
 from .cgraph import *
 
 # Needs to be last line
-__version__ = '1.2.0'
+__version__ = '1.2.1'
