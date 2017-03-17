@@ -4,9 +4,9 @@
 This repository is the result of my efforts to understand symbolic computation of
 functions factored as expression trees. With the right concepts at hands, a few lines of code are able compute numeric and symbolic gradients of arbitrary functions. Even expression simplification is easily accomplished. While this library is not complete (and will never be) it offers the interested reader some insights on how to perform symbolic computation.
 
-The code is accompanied by a series of notebooks that explain fundamental concepts for developing your own library that performs symbolic computation:
-
 ### Notebooks on symbolic computation
+
+The code is accompanied by a series of notebooks that explain fundamental concepts for developing your own library that performs symbolic computation:
 
 **Foundations**
 - Computational Graphs - Introduction [view][1]
