@@ -15,7 +15,7 @@ The code is accompanied by a series of notebooks that explain fundamental concep
 **Applications**
 - Function Optimization [view][3]
 - Signed Distance Functions and Particle Physics [view][4] <br/>
-This was recently [referenced][5] by Donald House co-author of *Foundations of Physically Based Modeling & Animation* as additional reader supplied material. Signed distance functions are not covered in his book, which makes contribution a good fit. Most of the math used is directly linked with his book.
+This was recently [referenced][5] by Donald House co-author of *Foundations of Physically Based Modeling & Animation* as additional reader supplied material. Signed distance functions are not covered in his book, which makes contribution a good fit. Most of the math in the notebook used is directly linked with content of the book.
 
 All notebook sources can be found inside the [docs][docs] folder. There are certainly typos, grammatical errors and all kind of improvements possible. In case you have one for me, I'd be happy to see your pull requests or comments!
 
